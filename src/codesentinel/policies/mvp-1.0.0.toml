@@ -1,0 +1,124 @@
+schema_version = "1.0.0"
+policy_version = "mvp-1.0.0"
+decision_precedence = ["FAILED", "BLOCK", "NEEDS_REVIEW", "PASS"]
+always_required_skills = ["detect_secret"]
+provider_failure_error_codes = [
+  "MODEL_AUTH_ERROR",
+  "MODEL_ERROR",
+  "MODEL_QUOTA_EXCEEDED",
+  "RATE_LIMITED",
+  "TIMEOUT",
+]
+
+[[required_artifacts]]
+schema_name = "SecurityReview"
+schema_version = "1.0.0"
+agent_id = "security-scanner"
+agent_role = "Security Scanner"
+
+[[required_artifacts]]
+schema_name = "QualityReview"
+schema_version = "1.0.0"
+agent_id = "quality-reviewer"
+agent_role = "Quality Reviewer"
+
+[severity_rank]
+info = 0
+low = 1
+medium = 2
+high = 3
+critical = 4
+
+[evidence_rank]
+E0 = 0
+E1 = 1
+E2 = 2
+E3 = 3
+
+[rule_ids]
+pass = "P001"
+input_failure = "F001"
+policy_failure = "F002"
+engine_failure = "F003"
+integrity_block = "B004"
+
+[[e3_qualifiers]]
+source = "rule"
+detector_name = "detect_secret"
+detector_versions = ["1.0.0"]
+
+[[e3_qualifiers]]
+source = "rule"
+detector_name = "detect_injection"
+detector_versions = ["1.0.0"]
+
+[[e3_qualifiers]]
+source = "static_tool"
+detector_name = "detect_injection"
+detector_versions = ["1.0.0"]
+
+[[e3_qualifiers]]
+source = "rule"
+detector_name = "detect_dangerous_call"
+detector_versions = ["1.0.0"]
+
+[[e3_qualifiers]]
+source = "system"
+detector_name = "policy_integrity"
+detector_versions = ["1.0.0"]
+
+[[block_rules]]
+rule_id = "B001"
+categories = ["secret"]
+statuses = ["confirmed"]
+min_severity = "high"
+min_evidence_level = "E3"
+require_new_side = true
+
+[[block_rules]]
+rule_id = "B002"
+categories = ["command_injection", "dangerous_call"]
+statuses = ["confirmed"]
+min_severity = "high"
+min_evidence_level = "E3"
+require_new_side = true
+
+[[block_rules]]
+rule_id = "B003"
+categories = ["sql_injection"]
+statuses = ["confirmed"]
+min_severity = "high"
+min_evidence_level = "E3"
+require_new_side = true
+
+[[needs_review_rules]]
+rule_id = "N001"
+manual_action = "Re-run or manually complete every mandatory check."
+
+[[needs_review_rules]]
+rule_id = "N002"
+manual_action = "Reduce the diff scope or provide the missing code context."
+
+[[needs_review_rules]]
+rule_id = "N003"
+manual_action = "Resolve the listed evidence conflicts before merging."
+
+[[needs_review_rules]]
+rule_id = "N004"
+manual_action = "Manually validate each unresolved high-severity finding."
+
+[[needs_review_rules]]
+rule_id = "N005"
+manual_action = "Review the medium-risk business semantics and expected behavior."
+
+[[needs_review_rules]]
+rule_id = "N006"
+manual_action = "Repair or replace the invalid or incomplete Agent artifact."
+
+[[needs_review_rules]]
+rule_id = "N007"
+manual_action = "Restore the required model or tool service and re-run the missing review."
+
+[[needs_review_rules]]
+rule_id = "N008"
+manual_action = "Perform the remaining targeted checks manually; automatic recheck is exhausted."
