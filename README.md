@@ -8,16 +8,17 @@ AgentTeams as the collaboration runtime.
 
 P1 repository/security baseline, P2 DeepSeek API preflight, P3 AgentTeams
 gateway/four-runtime smoke testing, and P4 deterministic contract/policy
-kernel are complete. The Manager and three Workers use `deepseek-v4-pro`
+kernel are complete. P5 read-only Git Diff ingestion and the local Artifact
+Store are also complete. The Manager and three Workers use `deepseek-v4-pro`
 through a dedicated authenticated Higress route. Independently, the P4
 Policy Engine now produces offline, deterministic gate decisions from strict
-immutable contracts.
+immutable contracts, while P5 produces complete, hashed Git input artifacts
+and JSONL lifecycle traces without modifying the reviewed repository.
 
-Git Diff ingestion, real review skills, LLM review behavior, and real
-Manager-to-Worker business collaboration are not implemented yet. In
-particular, P3 infrastructure smoke testing must not be presented as the P10
-multi-agent workflow, and P4 unit evidence must not be presented as an
-end-to-end review.
+Real review skills, LLM review behavior, and real Manager-to-Worker business
+collaboration are not implemented yet. In particular, P3 infrastructure smoke
+testing must not be presented as the P10 multi-agent workflow, and P4/P5 unit
+evidence must not be presented as an end-to-end review.
 
 ## Frozen MVP boundary
 
@@ -87,6 +88,27 @@ D:\python\Anaconda\envs\agent_dev\python.exe -m ruff check src tests
 
 See [the P4 completion report](docs/progress/P4-contract-policy-kernel.md)
 for the trust boundary, adversarial cases, and phase limitations.
+
+## P5 read-only Git Diff input and artifacts
+
+P5 validates an exact local worktree root, resolves revisions to immutable
+commit object IDs, and supports committed revision ranges plus staged,
+unstaged, and combined worktree comparisons. It parses file changes, hunks,
+old/new line numbers, renames, binary files, unsupported languages, and
+explicit size limits without silently truncating the patch.
+
+The resulting `GitDiffArtifact` is local-only and always has
+`cloud_safe=false`. P6 must detect and mask secrets before any source can be
+eligible for a cloud model. Binary files, unsupported languages, and diffs
+over the configured changed-line limit are explicitly ineligible.
+
+Artifacts are written atomically below `artifacts/runs/<review_id>/`, never
+inside the reviewed repository. Each run contains `git-diff.json`,
+`trace.jsonl`, and a hash manifest. P5 is a Python API boundary; the end-user
+CLI is intentionally deferred to P9.
+
+See [the P5 completion report](docs/progress/P5-git-diff-artifacts.md) for
+the supported modes, security controls, tests, and known limitations.
 
 ## License
 
