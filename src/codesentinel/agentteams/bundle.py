@@ -18,8 +18,12 @@ MANIFEST_NAME = f"codesentinel-agentteams-runtime-{BUNDLE_VERSION}.manifest.json
 _RUNTIME_MODULES = (
     "__init__.py",
     "__main__.py",
+    "assignment.py",
     "cli.py",
+    "context_models.py",
+    "delivery.py",
     "models.py",
+    "role_models.py",
     "serialization.py",
     "validation.py",
 )

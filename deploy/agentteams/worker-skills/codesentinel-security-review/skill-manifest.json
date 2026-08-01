@@ -1,0 +1,16 @@
+{
+  "schema_name": "CodeSentinelWorkerSkillManifest",
+  "schema_version": "1.0.0",
+  "skill_name": "codesentinel-security-review",
+  "skill_version": "1.0.0",
+  "worker_name": "cs-security-scanner",
+  "role": "security_scanner",
+  "assignment_schema": "CodeSentinelAgentTeamsWorkerAssignment@1.0.0",
+  "context_schema": "CodeSentinelAgentTeamsRoleContext@1.0.0",
+  "payload_schema": "SecurityReviewPayload@1.0.0",
+  "prompt_version": "security-semantic-1.0.0",
+  "runtime_bundle": "codesentinel-agentteams-runtime-0.1.0.pyz",
+  "runtime_contract": "1.0.0",
+  "required_source_dirty": false,
+  "deployment_binding": "deployment-manifest.json"
+}

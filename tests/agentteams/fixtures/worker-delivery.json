@@ -16,12 +16,12 @@
   ],
   "output": {
     "summary": "Compatibility fixture accepted.",
-    "changed_files": ["src/example.py"],
-    "risk_hints": []
+    "change_intents": ["validate the AgentTeams compatibility boundary"],
+    "affected_symbols": []
   },
   "evidence": [],
   "started_at": "2026-08-01T12:00:01Z",
   "finished_at": "2026-08-01T12:00:02Z",
   "model_usage": {"calls": 0},
-  "output_sha256": "07355ae949cfbe649ba3abef65a11449bcad13799f6a419314fbf57188ede2da"
+  "output_sha256": "fe95922afd479f9254934359fcaa912db905573e3a396d6d1b0094d785d22c34"
 }

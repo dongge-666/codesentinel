@@ -1,1 +1,2 @@
 *.toml text eol=lf
+deploy/agentteams/worker-skills/** text eol=lf

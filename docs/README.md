@@ -23,7 +23,13 @@ Frozen implementation contracts:
 
 - [P10 AgentTeams integration contract](design/P10-agentteams-contract.md)
 
+Reviewed execution plans:
+
+- [P10-3 Worker Skills deployment and structured-delivery plan](design/P10-3-worker-skills-plan.md)
+  (`CONDITIONAL GO`; P10-3A remediation re-audit passed, P10-3B not started)
+
 P10 subphase records:
 
 - [P10-1 contract and runtime-plan freeze](progress/P10-1-contract-runtime-freeze.md)
 - [P10-2 runtime-bundle compatibility slice](progress/P10-2-runtime-bundle-compatibility.md)
+- [P10-3A Worker Skills offline implementation](progress/P10-3A-worker-skills-offline.md)

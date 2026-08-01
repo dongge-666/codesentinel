@@ -18,6 +18,7 @@ from codesentinel.domain import (
     Finding,
     FindingStatus,
     RiskCategory,
+    Severity,
     SkillStatus,
 )
 
@@ -368,7 +369,7 @@ def _build_review_artifact(
                 category=RiskCategory(draft.category),
                 title=draft.title,
                 claim=draft.claim,
-                severity=draft.severity,
+                severity=Severity(draft.severity),
                 status=FindingStatus.SUSPECTED,
                 locations=locations,
                 evidence_ids=tuple(evidence_ids),

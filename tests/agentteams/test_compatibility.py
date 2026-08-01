@@ -46,6 +46,7 @@ def test_fixture_request_and_delivery_validate_fail_closed() -> None:
         request,
         expected_role="diff_analyzer",
         expected_task_id=TASK_ID,
+        expected_attempt=1,
     )
 
     assert request.budget.max_domain_model_calls == 4
@@ -109,12 +110,13 @@ def test_delivery_rejects_output_or_assignment_tampering() -> None:
 
     request = load_and_validate_request(REQUEST, ARTIFACT, now=NOW)
     delivery = load_and_validate_delivery(DELIVERY)
-    with pytest.raises(AgentTeamsValidationError, match="role or task"):
+    with pytest.raises(AgentTeamsValidationError, match="role, task ID, or attempt"):
         validate_delivery_against_request(
             delivery,
             request,
             expected_role="security_scanner",
             expected_task_id=TASK_ID,
+            expected_attempt=1,
         )
 
 
@@ -201,8 +203,12 @@ def test_bundle_is_reproducible_minimal_and_runs_isolated(tmp_path: Path) -> Non
         "codesentinel/__init__.py",
         "codesentinel/agentteams/__init__.py",
         "codesentinel/agentteams/__main__.py",
+        "codesentinel/agentteams/assignment.py",
         "codesentinel/agentteams/cli.py",
+        "codesentinel/agentteams/context_models.py",
+        "codesentinel/agentteams/delivery.py",
         "codesentinel/agentteams/models.py",
+        "codesentinel/agentteams/role_models.py",
         "codesentinel/agentteams/runtime-manifest.json",
         "codesentinel/agentteams/serialization.py",
         "codesentinel/agentteams/validation.py",
@@ -241,6 +247,8 @@ def test_bundle_is_reproducible_minimal_and_runs_isolated(tmp_path: Path) -> Non
             TASK_ID,
             "--role",
             "diff_analyzer",
+            "--attempt",
+            "1",
             "--now",
             "2026-08-01T12:00:00Z",
         ],

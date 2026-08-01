@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codesentinel.local/schemas/DiffSemanticPayload-1.0.0.json",
+  "title": "DiffSemanticPayload@1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "change_intents", "affected_symbols"],
+  "properties": {
+    "summary": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "change_intents": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "affected_symbols": {
+      "type": "array",
+      "maxItems": 50,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

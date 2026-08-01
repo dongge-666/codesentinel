@@ -32,7 +32,7 @@ def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def _read_json_object(path: str | Path) -> tuple[dict[str, Any], bytes]:
+def read_json_object(path: str | Path) -> tuple[dict[str, Any], bytes]:
     document = Path(path)
     if not document.is_file() or document.is_symlink():
         raise AgentTeamsValidationError("document must be a regular file")
@@ -57,10 +57,10 @@ def load_and_validate_request(
     *,
     now: datetime,
 ) -> ReviewRequestEnvelope:
-    payload, _ = _read_json_object(request_path)
+    payload, _ = read_json_object(request_path)
     request = ReviewRequestEnvelope.model_validate_json(canonical_json_bytes(payload))
     request.assert_admissible(now=now)
-    artifact, artifact_bytes = _read_json_object(artifact_path)
+    artifact, artifact_bytes = read_json_object(artifact_path)
     if artifact_bytes != canonical_json_bytes(artifact):
         raise AgentTeamsValidationError("input artifact is not canonical JSON")
     if sha256_hex(artifact_bytes) != request.input_sha256:
@@ -75,7 +75,7 @@ def load_and_validate_request(
 def load_and_validate_delivery(
     delivery_path: str | Path,
 ) -> WorkerDeliveryEnvelope:
-    payload, _ = _read_json_object(delivery_path)
+    payload, _ = read_json_object(delivery_path)
     return WorkerDeliveryEnvelope.model_validate_json(canonical_json_bytes(payload))
 
 
@@ -85,19 +85,26 @@ def validate_delivery_against_request(
     *,
     expected_role: WorkerRole,
     expected_task_id: str,
+    expected_attempt: int,
 ) -> None:
     if delivery.review_id != request.review_id or delivery.trace_id != request.trace_id:
         raise AgentTeamsValidationError("delivery correlation IDs do not match request")
     if delivery.parent_task_id != request.root_task_id:
         raise AgentTeamsValidationError("delivery parent task does not match request")
-    if delivery.role != expected_role or delivery.task_id != expected_task_id:
-        raise AgentTeamsValidationError("delivery role or task ID does not match assignment")
+    if (
+        delivery.role != expected_role
+        or delivery.task_id != expected_task_id
+        or delivery.attempt != expected_attempt
+    ):
+        raise AgentTeamsValidationError(
+            "delivery role, task ID, or attempt does not match assignment"
+        )
     expected_pointer = ArtifactPointer(
         ref=request.input_artifact_ref,
         sha256=request.input_sha256,
     )
-    if expected_pointer not in delivery.input_artifacts:
-        raise AgentTeamsValidationError("delivery does not reference the assigned input")
+    if delivery.input_artifacts != (expected_pointer,):
+        raise AgentTeamsValidationError("legacy delivery inputs do not exactly match request")
 
 
 def build_assignment_control(

@@ -1,0 +1,5 @@
+{
+  "summary": "The change adds bounded validation before request processing.",
+  "change_intents": ["reject malformed request data before execution"],
+  "affected_symbols": ["validate_request"]
+}

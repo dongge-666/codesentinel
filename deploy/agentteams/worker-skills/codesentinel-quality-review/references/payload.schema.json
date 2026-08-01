@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codesentinel.local/schemas/QualityReviewPayload-1.0.0.json",
+  "title": "QualityReviewPayload@1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings", "summary"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category", "severity", "title", "claim", "recommendation", "confidence", "line_refs"],
+        "properties": {
+          "category": {"enum": ["auth_boundary", "logic", "exception_handling", "performance", "test_gap"]},
+          "severity": {"enum": ["critical", "high", "medium", "low", "info"]},
+          "title": {"type": "string", "minLength": 1},
+          "claim": {"type": "string", "minLength": 1},
+          "recommendation": {"type": "string", "minLength": 1},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "line_refs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    },
+    "summary": {"type": "string", "minLength": 1, "maxLength": 1000}
+  }
+}

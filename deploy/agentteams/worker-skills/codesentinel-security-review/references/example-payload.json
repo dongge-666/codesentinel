@@ -1,0 +1,14 @@
+{
+  "findings": [
+    {
+      "category": "auth_boundary",
+      "severity": "high",
+      "title": "Authorization check follows the protected operation",
+      "claim": "The changed call can execute before the authorization result is enforced.",
+      "recommendation": "Move the authorization check before the protected call and add a denial-path test.",
+      "confidence": 0.86,
+      "line_refs": ["line-src-example-py-new-24"]
+    }
+  ],
+  "summary": "One authorization-ordering risk requires verification."
+}

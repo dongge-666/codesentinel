@@ -8,6 +8,11 @@ from typing import Annotated, Literal, Self
 
 from pydantic import ConfigDict, Field, StringConstraints, field_validator, model_validator
 
+from codesentinel.agentteams.role_models import DiffSemanticPayload as DiffSemanticPayload
+from codesentinel.agentteams.role_models import QualityFindingDraft as QualityFindingDraft
+from codesentinel.agentteams.role_models import QualityReviewPayload as QualityReviewPayload
+from codesentinel.agentteams.role_models import SecurityFindingDraft as SecurityFindingDraft
+from codesentinel.agentteams.role_models import SecurityReviewPayload as SecurityReviewPayload
 from codesentinel.domain import (
     AgentArtifact,
     DiffAnalysis,
@@ -178,85 +183,3 @@ class DeterministicFindingSummary(ContractModel):
     claim: NonEmptyStr
     line_refs: tuple[NonEmptyStr, ...]
     evidence_levels: tuple[Literal["E0", "E1", "E2", "E3"], ...]
-
-
-class DiffSemanticPayload(ContractModel):
-    summary: Annotated[
-        str,
-        StringConstraints(strip_whitespace=True, min_length=1, max_length=1000),
-    ]
-    change_intents: tuple[NonEmptyStr, ...] = Field(max_length=20)
-    affected_symbols: tuple[NonEmptyStr, ...] = Field(max_length=50)
-
-    @field_validator("change_intents", "affected_symbols")
-    @classmethod
-    def semantic_lists_must_be_unique(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        if len(value) != len(set(value)):
-            raise ValueError("semantic list values must be unique")
-        return value
-
-
-SecurityCategory = Literal[
-    "secret",
-    "sql_injection",
-    "command_injection",
-    "dangerous_call",
-    "auth_boundary",
-]
-QualityCategory = Literal[
-    "auth_boundary",
-    "logic",
-    "exception_handling",
-    "performance",
-    "test_gap",
-]
-
-
-class SecurityFindingDraft(ContractModel):
-    category: SecurityCategory
-    severity: Severity
-    title: NonEmptyStr
-    claim: NonEmptyStr
-    recommendation: NonEmptyStr
-    confidence: float = Field(ge=0, le=1)
-    line_refs: tuple[NonEmptyStr, ...] = Field(min_length=1, max_length=5)
-
-    @field_validator("line_refs")
-    @classmethod
-    def line_refs_must_be_unique(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        if len(value) != len(set(value)):
-            raise ValueError("line_refs must be unique")
-        return value
-
-
-class QualityFindingDraft(ContractModel):
-    category: QualityCategory
-    severity: Severity
-    title: NonEmptyStr
-    claim: NonEmptyStr
-    recommendation: NonEmptyStr
-    confidence: float = Field(ge=0, le=1)
-    line_refs: tuple[NonEmptyStr, ...] = Field(min_length=1, max_length=5)
-
-    @field_validator("line_refs")
-    @classmethod
-    def line_refs_must_be_unique(cls, value: tuple[str, ...]) -> tuple[str, ...]:
-        if len(value) != len(set(value)):
-            raise ValueError("line_refs must be unique")
-        return value
-
-
-class SecurityReviewPayload(ContractModel):
-    findings: tuple[SecurityFindingDraft, ...] = Field(max_length=10)
-    summary: Annotated[
-        str,
-        StringConstraints(strip_whitespace=True, min_length=1, max_length=1000),
-    ]
-
-
-class QualityReviewPayload(ContractModel):
-    findings: tuple[QualityFindingDraft, ...] = Field(max_length=10)
-    summary: Annotated[
-        str,
-        StringConstraints(strip_whitespace=True, min_length=1, max_length=1000),
-    ]

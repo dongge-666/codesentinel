@@ -13,8 +13,14 @@ from typing import Any
 
 import pydantic
 
+from .assignment import (
+    load_and_validate_assignment,
+    load_and_validate_role_context,
+    validate_delivery_against_assignment,
+)
+from .delivery import build_worker_delivery, load_role_payload, write_delivery_atomic
 from .models import BUNDLE_VERSION, CONTRACT_VERSION
-from .serialization import canonical_json_bytes
+from .serialization import canonical_json_bytes, sha256_hex
 from .validation import (
     build_assignment_control,
     load_and_validate_delivery,
@@ -101,6 +107,7 @@ def _validate_delivery(args: argparse.Namespace) -> dict[str, Any]:
         request,
         expected_role=args.role,
         expected_task_id=args.task_id,
+        expected_attempt=args.attempt,
     )
     return {
         "ok": True,
@@ -109,6 +116,33 @@ def _validate_delivery(args: argparse.Namespace) -> dict[str, Any]:
         "trace_id": delivery.trace_id,
         "task_id": delivery.task_id,
         "role": delivery.role,
+        "output_sha256": delivery.output_sha256,
+        "model_calls": 0,
+    }
+
+
+def _validate_assigned_delivery(args: argparse.Namespace) -> dict[str, Any]:
+    request = load_and_validate_request(
+        args.request,
+        args.artifact,
+        now=_parse_utc(args.now),
+    )
+    assignment = load_and_validate_assignment(
+        args.assignment,
+        request,
+        now=_parse_utc(args.now),
+    )
+    context = load_and_validate_role_context(args.context, assignment)
+    delivery = load_and_validate_delivery(args.delivery)
+    validate_delivery_against_assignment(delivery, request, assignment, context)
+    return {
+        "ok": True,
+        "operation": "validate-assigned-delivery",
+        "review_id": delivery.review_id,
+        "trace_id": delivery.trace_id,
+        "task_id": delivery.task_id,
+        "role": delivery.role,
+        "attempt": delivery.attempt,
         "output_sha256": delivery.output_sha256,
         "model_calls": 0,
     }
@@ -131,6 +165,50 @@ def _build_control(args: argparse.Namespace) -> dict[str, Any]:
         "matrix_text": control.to_matrix_text(),
         "matrix_bytes": len(control.to_matrix_text().encode("utf-8")),
         "artifact_transport": "minio",
+        "model_calls": 0,
+    }
+
+
+def _build_delivery(args: argparse.Namespace) -> dict[str, Any]:
+    request = load_and_validate_request(
+        args.request,
+        args.artifact,
+        now=_parse_utc(args.now),
+    )
+    assignment = load_and_validate_assignment(
+        args.assignment,
+        request,
+        now=_parse_utc(args.now),
+    )
+    context = load_and_validate_role_context(args.context, assignment)
+    payload = load_role_payload(args.payload, role=assignment.role)
+    delivery = build_worker_delivery(
+        request,
+        assignment=assignment,
+        context=context,
+        payload=payload,
+        started_at=_parse_utc(args.started_at),
+        finished_at=_parse_utc(args.finished_at),
+        status=args.status,
+        model_calls=args.model_calls,
+    )
+    destination = write_delivery_atomic(
+        delivery,
+        args.delivery,
+        assignment=assignment,
+        artifact_root=args.artifact_root,
+    )
+    return {
+        "ok": True,
+        "operation": "build-delivery",
+        "review_id": delivery.review_id,
+        "trace_id": delivery.trace_id,
+        "task_id": delivery.task_id,
+        "role": delivery.role,
+        "attempt": delivery.attempt,
+        "delivery": destination.name,
+        "delivery_sha256": sha256_hex(destination.read_bytes()),
+        "output_sha256": delivery.output_sha256,
         "model_calls": 0,
     }
 
@@ -160,7 +238,36 @@ def build_parser() -> argparse.ArgumentParser:
             )
         if name == "validate-delivery":
             command.add_argument("--delivery", type=Path, required=True)
+            command.add_argument("--attempt", type=int, choices=(1, 2), required=True)
         command.set_defaults(handler=handler)
+
+    assigned_delivery = commands.add_parser("validate-assigned-delivery")
+    assigned_delivery.add_argument("--request", type=Path, required=True)
+    assigned_delivery.add_argument("--artifact", type=Path, required=True)
+    assigned_delivery.add_argument("--assignment", type=Path, required=True)
+    assigned_delivery.add_argument("--context", type=Path, required=True)
+    assigned_delivery.add_argument("--delivery", type=Path, required=True)
+    assigned_delivery.add_argument("--now", required=True)
+    assigned_delivery.set_defaults(handler=_validate_assigned_delivery)
+
+    build_delivery = commands.add_parser("build-delivery")
+    build_delivery.add_argument("--request", type=Path, required=True)
+    build_delivery.add_argument("--artifact", type=Path, required=True)
+    build_delivery.add_argument("--payload", type=Path, required=True)
+    build_delivery.add_argument("--assignment", type=Path, required=True)
+    build_delivery.add_argument("--context", type=Path, required=True)
+    build_delivery.add_argument("--delivery", type=Path, required=True)
+    build_delivery.add_argument("--artifact-root", type=Path, required=True)
+    build_delivery.add_argument("--now", required=True)
+    build_delivery.add_argument("--started-at", required=True)
+    build_delivery.add_argument("--finished-at", required=True)
+    build_delivery.add_argument(
+        "--status",
+        choices=("SUCCESS", "SUCCESS_WITH_NOTES", "REVISION_NEEDED"),
+        default="SUCCESS",
+    )
+    build_delivery.add_argument("--model-calls", type=int, choices=(1,), default=1)
+    build_delivery.set_defaults(handler=_build_delivery)
     return parser
 
 

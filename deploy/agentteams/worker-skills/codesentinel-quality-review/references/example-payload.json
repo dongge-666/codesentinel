@@ -1,0 +1,14 @@
+{
+  "findings": [
+    {
+      "category": "test_gap",
+      "severity": "medium",
+      "title": "New failure branch lacks a focused test",
+      "claim": "The added exception path has no matching regression case in the supplied context.",
+      "recommendation": "Add a focused test that asserts the failure result and error boundary.",
+      "confidence": 0.81,
+      "line_refs": ["line-src-example-py-new-31"]
+    }
+  ],
+  "summary": "One regression-test gap should be addressed."
+}

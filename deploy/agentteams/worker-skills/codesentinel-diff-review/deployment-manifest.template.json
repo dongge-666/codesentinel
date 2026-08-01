@@ -1,0 +1,10 @@
+{
+  "schema_name": "CodeSentinelWorkerSkillDeployment",
+  "schema_version": "1.0.0",
+  "skill_name": "codesentinel-diff-review",
+  "skill_version": "1.0.0",
+  "source_revision": "__P10_3A_COMMIT__",
+  "source_dirty": false,
+  "runtime_bundle_ref": "__SHARED_RUNTIME_BUNDLE_REF__",
+  "runtime_bundle_sha256": "__RUNTIME_BUNDLE_SHA256__"
+}
