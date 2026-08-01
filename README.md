@@ -9,16 +9,19 @@ AgentTeams as the collaboration runtime.
 P1 repository/security baseline, P2 DeepSeek API preflight, P3 AgentTeams
 gateway/four-runtime smoke testing, P4 deterministic contract/policy kernel,
 P5 read-only Git Diff ingestion, P6 deterministic security Skills, and P7
-structured DeepSeek analysis Agents are complete. The Manager and three
+structured DeepSeek analysis Agents, and P8 risk/evidence assurance are
+complete. The Manager and three
 Workers use `deepseek-v4-pro` through a dedicated authenticated Higress route.
 Independently, the domain path now produces strict policy decisions, complete
 hashed Git input artifacts, reproducible E3 evidence, a fail-closed sanitized
-diff boundary, and schema-validated Diff, Security, and Quality model outputs.
+diff boundary, schema-validated Diff, Security, and Quality model outputs,
+deterministic risk routing, evidence conflict detection, and a single bounded
+targeted recheck.
 
-Risk routing, directed evidence repair, an end-to-end CLI, and real
-Manager-to-Worker business collaboration are not implemented yet. In
+An end-to-end CLI and real Manager-to-Worker business collaboration are not
+implemented yet. In
 particular, P3 infrastructure smoke testing must not be presented as the P10
-multi-agent workflow, and P4-P7 component evidence must not be presented as an
+multi-agent workflow, and P4-P8 component evidence must not be presented as an
 end-to-end review.
 
 ## Frozen MVP boundary
@@ -149,6 +152,24 @@ D:\python\Anaconda\envs\agent_dev\python.exe -m codesentinel.preflight.p7_agents
 
 See [the P7 completion report](docs/progress/P7-deepseek-structured-agents.md)
 for the isolation matrix, live metadata, failure behavior, and limitations.
+
+## P8 risk routing and evidence assurance
+
+P8 adds a deterministic `RiskMap`, always-on versus routed Skill plans,
+explicit skipped-check reasons, complete Coverage reconciliation, normalized
+Finding fingerprints, cross-Agent evidence deduplication, and deterministic
+conflict detection. Unresolved contradictions, severity mismatches, and
+location mismatches are passed to the P4 policy as `NEEDS_REVIEW` evidence
+conflicts.
+
+The targeted recheck controller accepts only exact findings, locations,
+conflicts, Skills, and routes. It can run once, preserves original evidence,
+requires new non-LLM E2/E3 support before confirming or dismissing a Finding,
+and always reruns the deterministic Policy Engine. Invalid, timed-out, or still
+inconclusive rechecks exhaust automatically under `N008`.
+
+See [the P8 completion report](docs/progress/P8-risk-evidence-recheck.md) for
+the trust boundary, acceptance evidence, and phase limitations.
 
 ## License
 
