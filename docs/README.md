@@ -18,3 +18,11 @@ Completed phase reports:
 - [P7 DeepSeek Provider and structured Agents](progress/P7-deepseek-structured-agents.md)
 - [P8 risk routing, evidence assurance, and targeted recheck](progress/P8-risk-evidence-recheck.md)
 - [P9 local reference runner and CLI](progress/P9-local-reference-runner-cli.md)
+
+Frozen implementation contracts:
+
+- [P10 AgentTeams integration contract](design/P10-agentteams-contract.md)
+
+P10 subphase records:
+
+- [P10-1 contract and runtime-plan freeze](progress/P10-1-contract-runtime-freeze.md)
