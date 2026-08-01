@@ -28,6 +28,7 @@ dependencies = [
 
 [project.scripts]
 codesentinel-deepseek-preflight = "codesentinel.preflight.deepseek:main"
+codesentinel-p7-live = "codesentinel.preflight.p7_agents:main"
 
 [project.optional-dependencies]
 dev = [

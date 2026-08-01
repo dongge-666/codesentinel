@@ -8,17 +8,18 @@ AgentTeams as the collaboration runtime.
 
 P1 repository/security baseline, P2 DeepSeek API preflight, P3 AgentTeams
 gateway/four-runtime smoke testing, P4 deterministic contract/policy kernel,
-P5 read-only Git Diff ingestion, and P6 deterministic security Skills are
-complete. The Manager and three Workers use `deepseek-v4-pro` through a
-dedicated authenticated Higress route. Independently, the offline path now
-produces strict policy decisions, complete hashed Git input artifacts, three
-versioned security Skill results, reproducible E3 evidence, and a fail-closed
-sanitized diff boundary.
+P5 read-only Git Diff ingestion, P6 deterministic security Skills, and P7
+structured DeepSeek analysis Agents are complete. The Manager and three
+Workers use `deepseek-v4-pro` through a dedicated authenticated Higress route.
+Independently, the domain path now produces strict policy decisions, complete
+hashed Git input artifacts, reproducible E3 evidence, a fail-closed sanitized
+diff boundary, and schema-validated Diff, Security, and Quality model outputs.
 
-LLM review behavior and real Manager-to-Worker business collaboration are not
-implemented yet. In particular, P3 infrastructure smoke testing must not be
-presented as the P10 multi-agent workflow, and P4-P6 unit evidence must not be
-presented as an end-to-end review.
+Risk routing, directed evidence repair, an end-to-end CLI, and real
+Manager-to-Worker business collaboration are not implemented yet. In
+particular, P3 infrastructure smoke testing must not be presented as the P10
+multi-agent workflow, and P4-P7 component evidence must not be presented as an
+end-to-end review.
 
 ## Frozen MVP boundary
 
@@ -126,6 +127,28 @@ E0 evidence instead of pretending that the scan was safe.
 
 See [the P6 completion report](docs/progress/P6-deterministic-security-skills.md)
 for the evidence boundary, adapter behavior, tests, and phase limitations.
+
+## P7 DeepSeek Provider and structured Agents
+
+P7 adds one bounded `deepseek-v4-pro` Provider and three role-isolated runners:
+Diff Analyzer, Security Scanner semantic review, and Quality Reviewer. Every
+request uses a versioned prompt, low temperature, JSON mode, strict local
+Pydantic validation, at most one network retry, and at most one schema
+regeneration under a shared four-call review budget.
+
+Only a `cloud_safe=true` P6 view can create model context. Call telemetry stores
+hashes, latency, tokens, retry purpose, and estimated cost, but never prompts,
+source, credentials, model output, or reasoning content. LLM evidence is
+created locally as E1 regardless of what the model tries to claim.
+
+Run the synthetic live check with:
+
+```powershell
+D:\python\Anaconda\envs\agent_dev\python.exe -m codesentinel.preflight.p7_agents
+```
+
+See [the P7 completion report](docs/progress/P7-deepseek-structured-agents.md)
+for the isolation matrix, live metadata, failure behavior, and limitations.
 
 ## License
 
