@@ -7,18 +7,18 @@ AgentTeams as the collaboration runtime.
 ## Current status
 
 P1 repository/security baseline, P2 DeepSeek API preflight, P3 AgentTeams
-gateway/four-runtime smoke testing, and P4 deterministic contract/policy
-kernel are complete. P5 read-only Git Diff ingestion and the local Artifact
-Store are also complete. The Manager and three Workers use `deepseek-v4-pro`
-through a dedicated authenticated Higress route. Independently, the P4
-Policy Engine now produces offline, deterministic gate decisions from strict
-immutable contracts, while P5 produces complete, hashed Git input artifacts
-and JSONL lifecycle traces without modifying the reviewed repository.
+gateway/four-runtime smoke testing, P4 deterministic contract/policy kernel,
+P5 read-only Git Diff ingestion, and P6 deterministic security Skills are
+complete. The Manager and three Workers use `deepseek-v4-pro` through a
+dedicated authenticated Higress route. Independently, the offline path now
+produces strict policy decisions, complete hashed Git input artifacts, three
+versioned security Skill results, reproducible E3 evidence, and a fail-closed
+sanitized diff boundary.
 
-Real review skills, LLM review behavior, and real Manager-to-Worker business
-collaboration are not implemented yet. In particular, P3 infrastructure smoke
-testing must not be presented as the P10 multi-agent workflow, and P4/P5 unit
-evidence must not be presented as an end-to-end review.
+LLM review behavior and real Manager-to-Worker business collaboration are not
+implemented yet. In particular, P3 infrastructure smoke testing must not be
+presented as the P10 multi-agent workflow, and P4-P6 unit evidence must not be
+presented as an end-to-end review.
 
 ## Frozen MVP boundary
 
@@ -109,6 +109,23 @@ CLI is intentionally deferred to P9.
 
 See [the P5 completion report](docs/progress/P5-git-diff-artifacts.md) for
 the supported modes, security controls, tests, and known limitations.
+
+## P6 deterministic security Skills
+
+P6 adds `detect_secret`, deterministic `detect_injection`, and
+`detect_dangerous_call` as strict versioned Skills. Exact local rules produce
+reproducible E3 evidence; independent detect-secrets and Bandit observations
+remain E2 unless an approved deterministic rule also confirms the issue.
+Only added lines can create security findings. Deleted secrets are masked for
+privacy but do not create blocking findings.
+
+Every detected secret is replaced locally with a typed fingerprint placeholder
+before a `SanitizedDiffView` can become `cloud_safe=true`. A secret-tool failure
+or an oversized diff denies source disclosure and records failed coverage plus
+E0 evidence instead of pretending that the scan was safe.
+
+See [the P6 completion report](docs/progress/P6-deterministic-security-skills.md)
+for the evidence boundary, adapter behavior, tests, and phase limitations.
 
 ## License
 

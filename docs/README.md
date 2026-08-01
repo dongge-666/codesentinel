@@ -14,3 +14,4 @@ Completed phase reports:
 - [P3 AgentTeams DeepSeek smoke](progress/P3-agentteams-deepseek-smoke.md)
 - [P4 contract and deterministic policy kernel](progress/P4-contract-policy-kernel.md)
 - [P5 read-only Git Diff input and Artifact Store](progress/P5-git-diff-artifacts.md)
+- [P6 deterministic security Skills](progress/P6-deterministic-security-skills.md)

@@ -19,6 +19,8 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
+  "bandit>=1.9.4,<2",
+  "detect-secrets>=1.5,<2",
   "openai>=2.46,<3",
   "pydantic>=2.13,<3",
   "python-dotenv>=1.2,<2",
