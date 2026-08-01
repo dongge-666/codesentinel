@@ -26,3 +26,4 @@ Frozen implementation contracts:
 P10 subphase records:
 
 - [P10-1 contract and runtime-plan freeze](progress/P10-1-contract-runtime-freeze.md)
+- [P10-2 runtime-bundle compatibility slice](progress/P10-2-runtime-bundle-compatibility.md)

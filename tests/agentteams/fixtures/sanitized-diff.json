@@ -1,0 +1,1 @@
+{"cloud_safe":true,"files":[{"patch":"@@ -1 +1 @@\n-value = 1\n+value = 2\n","path":"src/example.py"}],"review_id":"review-p10-2-fixture","schema_name":"CodeSentinelSanitizedDiffFixture","schema_version":"1.0.0"}

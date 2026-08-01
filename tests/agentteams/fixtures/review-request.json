@@ -1,0 +1,18 @@
+{
+  "schema_name": "CodeSentinelAgentTeamsReviewRequest",
+  "schema_version": "1.0.0",
+  "review_id": "review-p10-2-fixture",
+  "trace_id": "trace-p10-2-fixture",
+  "root_task_id": "task-20260801-120000-manager-p10fixture",
+  "input_artifact_ref": "shared/projects/codesentinel/reviews/review-p10-2-fixture/input/sanitized-diff.json",
+  "input_sha256": "0dfdce1cd768ab0513352ebfcdfe4d90a82d1bd046d276a417661cb2cc4ae1ce",
+  "policy_version": "mvp-1.0.0",
+  "runtime": "agentteams-v1.1.2",
+  "budget": {
+    "max_domain_model_calls": 4,
+    "max_total_model_calls": 8,
+    "max_reserved_repair_or_recheck_calls": 1
+  },
+  "deadline_at": "2099-01-01T00:00:00Z",
+  "cloud_safe": true
+}
