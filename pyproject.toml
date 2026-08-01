@@ -27,6 +27,7 @@ dependencies = [
 ]
 
 [project.scripts]
+codesentinel = "codesentinel.runtime.cli:main"
 codesentinel-deepseek-preflight = "codesentinel.preflight.deepseek:main"
 codesentinel-p7-live = "codesentinel.preflight.p7_agents:main"
 

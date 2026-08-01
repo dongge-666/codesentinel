@@ -8,21 +8,19 @@ AgentTeams as the collaboration runtime.
 
 P1 repository/security baseline, P2 DeepSeek API preflight, P3 AgentTeams
 gateway/four-runtime smoke testing, P4 deterministic contract/policy kernel,
-P5 read-only Git Diff ingestion, P6 deterministic security Skills, and P7
-structured DeepSeek analysis Agents, and P8 risk/evidence assurance are
-complete. The Manager and three
+P5 read-only Git Diff ingestion, P6 deterministic security Skills, P7
+structured DeepSeek analysis Agents, P8 risk/evidence assurance, and the P9
+single-process reference CLI are complete. The Manager and three
 Workers use `deepseek-v4-pro` through a dedicated authenticated Higress route.
 Independently, the domain path now produces strict policy decisions, complete
 hashed Git input artifacts, reproducible E3 evidence, a fail-closed sanitized
 diff boundary, schema-validated Diff, Security, and Quality model outputs,
-deterministic risk routing, evidence conflict detection, and a single bounded
-targeted recheck.
+deterministic risk routing, evidence conflict detection, a single bounded
+targeted recheck, and an auditable end-to-end local reference run.
 
-An end-to-end CLI and real Manager-to-Worker business collaboration are not
-implemented yet. In
-particular, P3 infrastructure smoke testing must not be presented as the P10
-multi-agent workflow, and P4-P8 component evidence must not be presented as an
-end-to-end review.
+Real Manager-to-Worker business collaboration is not implemented yet. In
+particular, neither P3 infrastructure smoke testing nor the P9 single-process
+trace may be presented as the P10 multi-agent workflow.
 
 ## Frozen MVP boundary
 
@@ -170,6 +168,28 @@ inconclusive rechecks exhaust automatically under `N008`.
 
 See [the P8 completion report](docs/progress/P8-risk-evidence-recheck.md) for
 the trust boundary, acceptance evidence, and phase limitations.
+
+## P9 local reference runner and CLI
+
+P9 connects the P5-P8 domain components into a fail-closed local review. It
+persists JSON contracts, a Markdown report, an ordered JSONL trace, model-call
+metadata, and a SHA-256 manifest outside the reviewed repository. Stable exit
+codes are PASS=0, BLOCK=1, NEEDS_REVIEW=2, and execution failure=3.
+
+Run a tracked local Git diff with:
+
+```powershell
+D:\python\Anaconda\envs\agent_dev\Scripts\codesentinel.exe `
+  D:\path\to\reviewed-repository `
+  --workspace D:\path\to\codesentinel `
+  --env-file D:\path\to\codesentinel\.env
+```
+
+The workspace must be separate from the reviewed target. P9 is intentionally
+a sequential reference runner, not AgentTeams collaboration.
+
+See [the P9 completion report](docs/progress/P9-local-reference-runner-cli.md)
+for the CLI contract, artifact bundle, real API evidence, and limitations.
 
 ## License
 

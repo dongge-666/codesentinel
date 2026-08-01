@@ -158,6 +158,23 @@ def test_secret_deleted_from_existing_code_does_not_create_finding(tmp_path: Pat
     assert secret not in result.model_dump_json()
 
 
+def test_default_secret_adapter_rejects_unquoted_identifier_entropy_false_positive(
+    tmp_path: Path,
+) -> None:
+    artifact = make_artifact(
+        tmp_path,
+        "def calculate(value):\n    return value\n",
+        "def calculate(value):\n    result = value + 1\n    return result\n",
+        review_id="secret-identifier-false-positive",
+    )
+    result = DetectSecretSkill().run(artifact, now=FIXED_TIME)
+
+    assert result.status is SkillStatus.SUCCESS
+    assert result.findings == ()
+    assert result.evidence == ()
+    assert result.redactions == ()
+
+
 @pytest.mark.parametrize(
     ("source", "category"),
     [

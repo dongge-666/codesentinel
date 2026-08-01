@@ -17,3 +17,4 @@ Completed phase reports:
 - [P6 deterministic security Skills](progress/P6-deterministic-security-skills.md)
 - [P7 DeepSeek Provider and structured Agents](progress/P7-deepseek-structured-agents.md)
 - [P8 risk routing, evidence assurance, and targeted recheck](progress/P8-risk-evidence-recheck.md)
+- [P9 local reference runner and CLI](progress/P9-local-reference-runner-cli.md)

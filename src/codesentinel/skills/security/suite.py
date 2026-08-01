@@ -4,14 +4,19 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from codesentinel.domain import SkillStatus
+from codesentinel.domain import CoverageRecord, CoverageStatus, SkillStatus
 from codesentinel.gitdiff import GitDiffArtifact
 
-from .base import content_hash
+from .base import content_hash, stable_id
 from .common import iter_source_lines
 from .dangerous import DetectDangerousCallSkill
 from .injection import DetectInjectionSkill
-from .models import SanitizedDiffLine, SanitizedDiffView, SecurityScanResult
+from .models import (
+    SanitizedDiffLine,
+    SanitizedDiffView,
+    SecurityScanResult,
+    SecuritySkillResult,
+)
 from .secret import DetectSecretSkill
 
 
@@ -35,12 +40,164 @@ class SecuritySkillSuite:
         *,
         now: datetime | None = None,
     ) -> SecurityScanResult:
+        """Run the original P6 all-Skill profile for backward compatibility."""
+
         started = now or datetime.now(UTC)
-        results = (
-            self._secret.run(artifact, mandatory=True, now=started),
-            self._injection.run(artifact, mandatory=True, now=started),
-            self._dangerous.run(artifact, mandatory=True, now=started),
+        secret_result, sanitized = self.run_secret_boundary(artifact, now=started)
+        return self.run_routed(
+            artifact,
+            secret_result=secret_result,
+            sanitized_diff=sanitized,
+            planned_route_ids={
+                "detect_secret": (),
+                "detect_injection": (),
+                "detect_dangerous_call": (),
+            },
+            now=started,
         )
+
+    def run_secret_boundary(
+        self,
+        artifact: GitDiffArtifact,
+        *,
+        now: datetime | None = None,
+    ) -> tuple[SecuritySkillResult, SanitizedDiffView]:
+        """Run the always-on secret Skill before any cloud context can exist."""
+
+        started = now or datetime.now(UTC)
+        result = self._secret.run(artifact, mandatory=True, now=started)
+        sanitized = self._build_sanitized_view(
+            artifact,
+            secret_status=result.status,
+            redactions=result.redactions,
+        )
+        return result, sanitized
+
+    def run_routed(
+        self,
+        artifact: GitDiffArtifact,
+        *,
+        secret_result: SecuritySkillResult,
+        sanitized_diff: SanitizedDiffView,
+        planned_route_ids: dict[str, tuple[str, ...]],
+        now: datetime | None = None,
+    ) -> SecurityScanResult:
+        """Complete the suite while skipping optional Skills absent from the RiskMap."""
+
+        started = now or datetime.now(UTC)
+        if secret_result.review_id != artifact.review_id:
+            raise ValueError("secret result review_id must match the Git artifact")
+        if secret_result.manifest.name != "detect_secret":
+            raise ValueError("secret_result must come from detect_secret")
+        if sanitized_diff.review_id != artifact.review_id:
+            raise ValueError("sanitized diff review_id must match the Git artifact")
+        if sanitized_diff.source_diff_hash != artifact.diff_hash:
+            raise ValueError("sanitized diff hash must match the Git artifact")
+        supported = {
+            "detect_secret",
+            "detect_injection",
+            "detect_dangerous_call",
+        }
+        if set(planned_route_ids) - supported:
+            raise ValueError("planned deterministic security Skill is unsupported")
+        if "detect_secret" not in planned_route_ids:
+            raise ValueError("detect_secret must always be planned")
+
+        injection = (
+            self._injection.run(
+                artifact,
+                mandatory=True,
+                route_ids=planned_route_ids["detect_injection"],
+                now=started,
+            )
+            if "detect_injection" in planned_route_ids
+            else self._skipped_result(
+                artifact,
+                self._injection,
+                started,
+                "No RiskMap route requires deterministic injection detection.",
+            )
+        )
+        dangerous = (
+            self._dangerous.run(
+                artifact,
+                mandatory=True,
+                route_ids=planned_route_ids["detect_dangerous_call"],
+                now=started,
+            )
+            if "detect_dangerous_call" in planned_route_ids
+            else self._skipped_result(
+                artifact,
+                self._dangerous,
+                started,
+                "No RiskMap route requires deterministic dangerous-call detection.",
+            )
+        )
+        secret_routes = planned_route_ids["detect_secret"]
+        if secret_result.coverage.route_ids != secret_routes:
+            rebound = secret_result.coverage.model_copy(
+                update={"route_ids": secret_routes, "mandatory": True}
+            )
+            secret_result = secret_result.model_copy(
+                update={
+                    "coverage": CoverageRecord.model_validate_json(
+                        rebound.model_dump_json()
+                    )
+                }
+            )
+            secret_result = SecuritySkillResult.model_validate_json(
+                secret_result.model_dump_json()
+            )
+        return self._aggregate(
+            artifact,
+            (secret_result, injection, dangerous),
+            sanitized_diff,
+        )
+
+    @staticmethod
+    def _skipped_result(
+        artifact: GitDiffArtifact,
+        skill,
+        now: datetime,
+        reason: str,
+    ) -> SecuritySkillResult:
+        manifest = skill.manifest
+        coverage = CoverageRecord(
+            coverage_id=stable_id(
+                "coverage",
+                artifact.diff_hash,
+                manifest.name,
+                manifest.version,
+            ),
+            skill_name=manifest.name,
+            skill_version=manifest.version,
+            status=CoverageStatus.SKIPPED,
+            mandatory=False,
+            route_ids=(),
+            files_checked=(),
+            reason=reason,
+            error_code=None,
+            duration_ms=0,
+        )
+        return SecuritySkillResult(
+            review_id=artifact.review_id,
+            manifest=manifest,
+            status=SkillStatus.SKIPPED,
+            findings=(),
+            evidence=(),
+            coverage=coverage,
+            verified_e3_evidence_ids=(),
+            redactions=(),
+            started_at=now,
+            completed_at=now,
+        )
+
+    @staticmethod
+    def _aggregate(
+        artifact: GitDiffArtifact,
+        results: tuple[SecuritySkillResult, ...],
+        sanitized: SanitizedDiffView,
+    ) -> SecurityScanResult:
         statuses = {result.status for result in results}
         if SkillStatus.FAILED in statuses:
             status = SkillStatus.FAILED
@@ -58,11 +215,6 @@ class SecuritySkillSuite:
         )
         redactions = tuple(
             redaction for result in results for redaction in result.redactions
-        )
-        sanitized = self._build_sanitized_view(
-            artifact,
-            secret_status=results[0].status,
-            redactions=redactions,
         )
         return SecurityScanResult(
             review_id=artifact.review_id,

@@ -81,6 +81,8 @@ class DetectSecretSkill(DeterministicSecuritySkill):
                     )
 
         for observation in self._adapter.scan(lines):
+            if not self._credible_heuristic(observation.source_line, observation.secret_value):
+                continue
             key = self._match_key(observation.source_line, observation.secret_value)
             if key in matches:
                 continue
@@ -195,3 +197,14 @@ class DetectSecretSkill(DeterministicSecuritySkill):
     @staticmethod
     def _safe_label(value: str) -> str:
         return re.sub(r"[^A-Z0-9]+", "_", value.upper()).strip("_") or "SECRET"
+
+    @staticmethod
+    def _credible_heuristic(source_line: SourceLine, secret_value: str) -> bool:
+        """Reject identifier-like entropy false positives before redaction or evidence."""
+
+        if len(secret_value) < 8:
+            return False
+        return any(
+            f"{quote}{secret_value}{quote}" in source_line.content
+            for quote in ("'", '"')
+        )
