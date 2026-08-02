@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast
-import textwrap
 from datetime import datetime
 
 from codesentinel.domain import (
@@ -19,6 +18,12 @@ from .adapters import BanditAdapter, DefaultBanditAdapter
 from .base import DetectionOutput, DeterministicSecuritySkill
 from .common import SourceLine, build_detection, iter_source_lines
 from .models import SkillManifest
+from .python_ast import (
+    analyze_python_diff,
+    collect_import_aliases,
+    python_files_in_scope,
+    qualified_name,
+)
 
 _SUBPROCESS_CALLS = {
     "subprocess.call",
@@ -34,18 +39,20 @@ class DetectDangerousCallSkill(DeterministicSecuritySkill):
 
     manifest = SkillManifest(
         name="detect_dangerous_call",
+        version="1.1.0",
         purpose="Detect dangerous Python execution and shell APIs on added lines.",
         trigger="Run when Python source contains added lines.",
-        dependencies=("python-ast@3.11", "bandit>=1.9.4,<2"),
+        dependencies=("python-ast@3.11", "builtin-rules@1.1.0", "bandit>=1.9.4,<2"),
         permissions=("provided_diff_only", "temporary_local_file"),
-        safety="Never imports reviewed code; Bandit receives only isolated added statements.",
-        reuse="Reusable for Python additions accepted by the local AST parser.",
+        safety="Never imports reviewed code; AST reconstruction is local and non-executing.",
+        reuse="Reusable for Python additions with sufficient hunk context for AST parsing.",
     )
 
     def __init__(self, adapter: BanditAdapter | None = None) -> None:
         self._adapter = adapter or DefaultBanditAdapter()
 
     def _detect(self, artifact: GitDiffArtifact, *, now: datetime) -> DetectionOutput:
+        analysis = analyze_python_diff(artifact)
         lines = iter_source_lines(
             artifact,
             python_only=True,
@@ -55,55 +62,77 @@ class DetectDangerousCallSkill(DeterministicSecuritySkill):
         findings = []
         evidence = []
         builtin_locations: set[tuple[str, str, int]] = set()
-        for source_line in lines:
-            tree = self._parse_line(source_line)
-            if tree is None:
-                continue
-            rules: dict[str, tuple[str, str, str]] = {}
-            for node in ast.walk(tree):
-                if not isinstance(node, ast.Call):
-                    continue
-                name = self._qualified_name(node.func)
-                if name in {"eval", "exec", "builtins.eval", "builtins.exec"}:
-                    rules["CS-DANGER-DYNAMIC-EXEC"] = (
-                        "Dynamic code execution added",
-                        "An eval or exec call can execute data as Python code.",
-                        (
-                            "Replace dynamic execution with an explicit parser or "
-                            "allow-listed dispatch."
-                        ),
-                    )
-                elif name == "os.system":
-                    rules["CS-DANGER-OS-SYSTEM"] = (
-                        "Shell process API added",
-                        "os.system invokes a command through the operating-system shell.",
-                        "Use subprocess with shell disabled and an argument list.",
-                    )
-                elif name in _SUBPROCESS_CALLS and self._shell_enabled(node):
-                    rules["CS-DANGER-SUBPROCESS-SHELL"] = (
-                        "Shell-enabled subprocess added",
-                        "A subprocess call explicitly enables shell interpretation.",
-                        "Disable shell execution and pass arguments as a list.",
-                    )
-            for rule_id, (title, claim, recommendation) in rules.items():
-                finding, proof = build_detection(
-                    artifact=artifact,
-                    source_line=source_line,
-                    detector_name=self.manifest.name,
-                    detector_version=self.manifest.version,
-                    rule_id=rule_id,
-                    category=RiskCategory.DANGEROUS_CALL,
-                    severity=Severity.HIGH,
-                    title=title,
-                    claim=claim,
-                    recommendation=recommendation,
-                    now=now,
-                )
-                findings.append(finding)
-                evidence.append(proof)
-                builtin_locations.add(
-                    (source_line.file_path, source_line.hunk_id, source_line.line_number)
-                )
+        detections: dict[
+            tuple[str, str, str, int],
+            tuple[SourceLine, str, str, str],
+        ] = {}
+        for file_path in analysis.files_checked:
+            units = analysis.units_for_file(file_path)
+            aliases = collect_import_aliases(units)
+            for unit in units:
+                for node in ast.walk(unit.tree):
+                    if not isinstance(node, ast.Call):
+                        continue
+                    source_line = unit.source_line_for_node(node, added_only=True)
+                    if source_line is None:
+                        continue
+                    name = qualified_name(node.func, aliases)
+                    rule: tuple[str, str, str, str] | None = None
+                    if name in {"eval", "exec", "builtins.eval", "builtins.exec"}:
+                        rule = (
+                            "CS-DANGER-DYNAMIC-EXEC",
+                            "Dynamic code execution added",
+                            "An eval or exec call can execute data as Python code.",
+                            (
+                                "Replace dynamic execution with an explicit parser or "
+                                "allow-listed dispatch."
+                            ),
+                        )
+                    elif name == "os.system":
+                        rule = (
+                            "CS-DANGER-OS-SYSTEM",
+                            "Shell process API added",
+                            "os.system invokes a command through the operating-system shell.",
+                            "Use subprocess with shell disabled and an argument list.",
+                        )
+                    elif name in _SUBPROCESS_CALLS and self._shell_enabled(node):
+                        rule = (
+                            "CS-DANGER-SUBPROCESS-SHELL",
+                            "Shell-enabled subprocess added",
+                            "A subprocess call explicitly enables shell interpretation.",
+                            "Disable shell execution and pass arguments as a list.",
+                        )
+                    if rule is not None:
+                        rule_id, title, claim, recommendation = rule
+                        detections[
+                            (
+                                rule_id,
+                                source_line.file_path,
+                                source_line.hunk_id,
+                                source_line.line_number,
+                            )
+                        ] = (source_line, title, claim, recommendation)
+
+        for key, (source_line, title, claim, recommendation) in detections.items():
+            rule_id = key[0]
+            finding, proof = build_detection(
+                artifact=artifact,
+                source_line=source_line,
+                detector_name=self.manifest.name,
+                detector_version=self.manifest.version,
+                rule_id=rule_id,
+                category=RiskCategory.DANGEROUS_CALL,
+                severity=Severity.HIGH,
+                title=title,
+                claim=claim,
+                recommendation=recommendation,
+                now=now,
+            )
+            findings.append(finding)
+            evidence.append(proof)
+            builtin_locations.add(
+                (source_line.file_path, source_line.hunk_id, source_line.line_number)
+            )
 
         for observation in self._adapter.scan(lines):
             line_key = (
@@ -134,15 +163,8 @@ class DetectDangerousCallSkill(DeterministicSecuritySkill):
             evidence.append(proof)
         return DetectionOutput(findings=tuple(findings), evidence=tuple(evidence))
 
-    @staticmethod
-    def _parse_line(source_line: SourceLine) -> ast.AST | None:
-        candidate = textwrap.dedent(source_line.content).strip()
-        if not candidate:
-            return None
-        try:
-            return ast.parse(candidate)
-        except SyntaxError:
-            return None
+    def _files_in_scope(self, artifact: GitDiffArtifact) -> tuple[str, ...]:
+        return python_files_in_scope(artifact)
 
     @staticmethod
     def _shell_enabled(node: ast.Call) -> bool:
@@ -152,15 +174,6 @@ class DetectDangerousCallSkill(DeterministicSecuritySkill):
             and keyword.value.value is True
             for keyword in node.keywords
         )
-
-    @classmethod
-    def _qualified_name(cls, node: ast.AST) -> str:
-        if isinstance(node, ast.Name):
-            return node.id
-        if isinstance(node, ast.Attribute):
-            prefix = cls._qualified_name(node.value)
-            return f"{prefix}.{node.attr}" if prefix else node.attr
-        return ""
 
     @staticmethod
     def _bandit_severity(value: str) -> Severity:

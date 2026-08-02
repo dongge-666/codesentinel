@@ -3,6 +3,11 @@
 Status: completed
 Date: 2026-07-31
 
+Correctness amendment: R1 replaced the injection and dangerous-call engines
+with `1.1.0` implementations on 2026-08-02. It also upgraded the
+`SanitizedDiffView` and aggregate scan contracts to `1.1.0`. See
+[R1 security detection correctness remediation](R1-security-correctness.md).
+
 ## Outcome
 
 P6 adds three local, deterministic, versioned security Skills over the P5
@@ -11,8 +16,8 @@ P6 adds three local, deterministic, versioned security Skills over the P5
 | Skill | Deterministic coverage | Independent adapter |
 |---|---|---|
 | `detect_secret@1.0.0` | exact OpenAI-style, AWS, and GitHub token rules | detect-secrets 1.5.x |
-| `detect_injection@1.0.0` | dynamic SQL construction and shell-command composition | Python AST/rules |
-| `detect_dangerous_call@1.0.0` | eval/exec, `os.system`, and shell-enabled subprocess | Bandit 1.9.x |
+| `detect_injection@1.1.0` | sink-aware dynamic SQL execution and shell-command composition | Python AST/rules |
+| `detect_dangerous_call@1.1.0` | eval/exec, `os.system`, and shell-enabled subprocess | Bandit 1.9.x |
 
 Each Skill publishes its purpose, owner, stage, input/output schema, trigger,
 dependencies, permission boundary, deterministic marker, timeout/retry policy,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated, Literal, Self
@@ -173,6 +174,12 @@ class AgentContextLine(ContractModel):
     line_number: int = Field(ge=1)
     content: str
     content_hash: NonEmptyStr
+
+    @model_validator(mode="after")
+    def content_hash_must_match_content(self) -> Self:
+        if hashlib.sha256(self.content.encode("utf-8")).hexdigest() != self.content_hash:
+            raise ValueError("Agent context content_hash must match content")
+        return self
 
 
 class DeterministicFindingSummary(ContractModel):

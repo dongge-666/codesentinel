@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import subprocess
 from datetime import UTC, datetime
@@ -178,8 +179,14 @@ def test_default_secret_adapter_rejects_unquoted_identifier_entropy_false_positi
 @pytest.mark.parametrize(
     ("source", "category"),
     [
-        ('query = "SELECT * FROM users WHERE id=" + user_id\n', RiskCategory.SQL_INJECTION),
-        ('query = f"SELECT * FROM users WHERE id={user_id}"\n', RiskCategory.SQL_INJECTION),
+        (
+            'cursor.execute("SELECT * FROM users WHERE id=" + user_id)\n',
+            RiskCategory.SQL_INJECTION,
+        ),
+        (
+            'cursor.execute(f"SELECT * FROM users WHERE id={user_id}")\n',
+            RiskCategory.SQL_INJECTION,
+        ),
         ('os.system("deploy " + branch)\n', RiskCategory.COMMAND_INJECTION),
         ('subprocess.run(command, shell=True)\n', RiskCategory.COMMAND_INJECTION),
     ],
@@ -204,7 +211,7 @@ def test_injection_rules_locate_added_python_line(
     assert matching[0].locations[0].start_line == 2
     proof = next(item for item in result.evidence if item.evidence_id in matching[0].evidence_ids)
     assert proof.level is EvidenceLevel.E3
-    assert proof.detector_version == "1.0.0"
+    assert proof.detector_version == "1.1.0"
 
 
 def test_safe_subprocess_argument_list_is_not_high_risk(tmp_path: Path) -> None:
@@ -222,6 +229,256 @@ def test_safe_subprocess_argument_list_is_not_high_risk(tmp_path: Path) -> None:
 
     assert not any(item.severity is Severity.HIGH for item in injection.findings)
     assert not any(item.severity is Severity.HIGH for item in dangerous.findings)
+
+
+def test_multiline_shell_and_eval_calls_are_confirmed_on_added_lines(
+    tmp_path: Path,
+) -> None:
+    artifact = make_artifact(
+        tmp_path,
+        "def safe(value):\n    return value\n",
+        (
+            "import subprocess\n"
+            "def unsafe(user_input):\n"
+            "    subprocess.run(\n"
+            "        user_input,\n"
+            "        shell=True,\n"
+            "    )\n"
+            "    return eval(\n"
+            "        user_input\n"
+            "    )\n"
+        ),
+        review_id="multiline-dangerous-regression",
+    )
+
+    injection = DetectInjectionSkill().run(artifact, now=FIXED_TIME)
+    dangerous = DetectDangerousCallSkill(adapter=EmptyBanditAdapter()).run(
+        artifact,
+        now=FIXED_TIME,
+    )
+
+    assert injection.coverage.status is CoverageStatus.COMPLETED
+    assert any(
+        item.category is RiskCategory.COMMAND_INJECTION
+        for item in injection.findings
+    )
+    assert dangerous.coverage.status is CoverageStatus.COMPLETED
+    assert len(dangerous.findings) == 2
+    assert {item.locations[0].start_line for item in dangerous.findings} == {3, 7}
+    assert all(item.status is FindingStatus.CONFIRMED for item in dangerous.findings)
+
+
+def test_dynamic_select_explanation_without_database_sink_is_not_sql_injection(
+    tmp_path: Path,
+) -> None:
+    artifact = make_artifact(
+        tmp_path,
+        "def explain(choice):\n    return choice\n",
+        'def explain(choice):\n    return f"SELECT a review strategy: {choice}"\n',
+        review_id="benign-select-regression",
+    )
+
+    result = DetectInjectionSkill().run(artifact, now=FIXED_TIME)
+
+    assert result.coverage.status is CoverageStatus.COMPLETED
+    assert not any(
+        item.category is RiskCategory.SQL_INJECTION for item in result.findings
+    )
+
+
+def test_sql_assignment_is_traced_only_when_reaching_execute_sink(tmp_path: Path) -> None:
+    artifact = make_artifact(
+        tmp_path,
+        "def load(cursor, user_id):\n    return None\n",
+        (
+            "def load(cursor, user_id):\n"
+            '    query = f"SELECT * FROM users WHERE id={user_id}"\n'
+            "    cursor.execute(\n"
+            "        query\n"
+            "    )\n"
+        ),
+        review_id="sql-dataflow-to-sink",
+    )
+
+    result = DetectInjectionSkill().run(artifact, now=FIXED_TIME)
+
+    matching = [
+        item for item in result.findings if item.category is RiskCategory.SQL_INJECTION
+    ]
+    assert len(matching) == 1
+    assert matching[0].locations[0].start_line == 3
+
+
+def test_dynamic_sql_assignment_added_before_existing_sink_maps_to_assignment(
+    tmp_path: Path,
+) -> None:
+    artifact = make_artifact(
+        tmp_path,
+        (
+            "def load(cursor, user_id):\n"
+            '    query = "SELECT * FROM users WHERE active = 1"\n'
+            "    cursor.execute(query)\n"
+        ),
+        (
+            "def load(cursor, user_id):\n"
+            '    query = f"SELECT * FROM users WHERE id={user_id}"\n'
+            "    cursor.execute(query)\n"
+        ),
+        review_id="sql-assignment-before-context-sink",
+    )
+
+    result = DetectInjectionSkill().run(artifact, now=FIXED_TIME)
+
+    matching = [
+        item for item in result.findings if item.category is RiskCategory.SQL_INJECTION
+    ]
+    assert len(matching) == 1
+    assert matching[0].locations[0].start_line == 2
+
+
+def test_parameterized_sql_sink_is_not_dynamic_injection(tmp_path: Path) -> None:
+    artifact = make_artifact(
+        tmp_path,
+        "def load(cursor, user_id):\n    return None\n",
+        (
+            "def load(cursor, user_id):\n"
+            '    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))\n'
+        ),
+        review_id="parameterized-sql-safe",
+    )
+
+    result = DetectInjectionSkill().run(artifact, now=FIXED_TIME)
+
+    assert result.coverage.status is CoverageStatus.COMPLETED
+    assert not any(
+        item.category is RiskCategory.SQL_INJECTION for item in result.findings
+    )
+
+
+def test_sql_assignment_does_not_flow_between_sibling_functions(tmp_path: Path) -> None:
+    artifact = make_artifact(
+        tmp_path,
+        "VALUE = 1\n",
+        (
+            "def build_query(user_id):\n"
+            '    query = f"SELECT * FROM users WHERE id={user_id}"\n'
+            "    return query\n"
+            "\n"
+            "def render(cursor, query):\n"
+            "    cursor.execute(query)\n"
+        ),
+        review_id="sql-sibling-scope-isolation",
+    )
+
+    result = DetectInjectionSkill().run(artifact, now=FIXED_TIME)
+
+    assert result.coverage.status is CoverageStatus.COMPLETED
+    assert not any(
+        item.category is RiskCategory.SQL_INJECTION for item in result.findings
+    )
+
+
+def test_import_aliases_resolve_multiline_dangerous_calls(tmp_path: Path) -> None:
+    artifact = make_artifact(
+        tmp_path,
+        "def safe(value):\n    return value\n",
+        (
+            "import subprocess as process\n"
+            "from builtins import eval as evaluate\n"
+            "def unsafe(value):\n"
+            "    process.run(\n"
+            "        value,\n"
+            "        shell=True,\n"
+            "    )\n"
+            "    return evaluate(value)\n"
+        ),
+        review_id="dangerous-import-aliases",
+    )
+
+    injection = DetectInjectionSkill().run(artifact, now=FIXED_TIME)
+    dangerous = DetectDangerousCallSkill(adapter=EmptyBanditAdapter()).run(
+        artifact,
+        now=FIXED_TIME,
+    )
+
+    assert any(
+        item.category is RiskCategory.COMMAND_INJECTION
+        for item in injection.findings
+    )
+    assert len(dangerous.findings) == 2
+
+
+def test_dangerous_names_in_comments_and_strings_do_not_trigger(tmp_path: Path) -> None:
+    artifact = make_artifact(
+        tmp_path,
+        "VALUE = 1\n",
+        (
+            "VALUE = 1\n"
+            '# eval(user_input) and subprocess.run(command, shell=True)\n'
+            'MESSAGE = "exec(payload)"\n'
+        ),
+        review_id="dangerous-comments-and-strings",
+    )
+
+    result = DetectDangerousCallSkill(adapter=EmptyBanditAdapter()).run(
+        artifact,
+        now=FIXED_TIME,
+    )
+
+    assert result.coverage.status is CoverageStatus.COMPLETED
+    assert result.findings == ()
+
+
+def test_unparseable_python_hunk_fails_coverage_instead_of_claiming_completion(
+    tmp_path: Path,
+) -> None:
+    artifact = make_artifact(
+        tmp_path,
+        "VALUE = 1\n",
+        "def broken(:\n    pass\n",
+        review_id="unparseable-python-hunk",
+    )
+
+    results = (
+        DetectInjectionSkill().run(artifact, now=FIXED_TIME),
+        DetectDangerousCallSkill(adapter=EmptyBanditAdapter()).run(
+            artifact,
+            now=FIXED_TIME,
+        ),
+    )
+
+    assert all(item.status is SkillStatus.FAILED for item in results)
+    assert all(item.coverage.status is CoverageStatus.FAILED for item in results)
+    assert all(
+        item.coverage.error_code == SkillErrorCode.CONTEXT_INSUFFICIENT.value
+        for item in results
+    )
+
+
+def test_indented_partial_hunk_uses_safe_wrapper_and_preserves_line_mapping(
+    tmp_path: Path,
+) -> None:
+    prefix = "".join(f"    value_{index} = value\n" for index in range(1, 9))
+    artifact = make_artifact(
+        tmp_path,
+        f"def transform(value):\n{prefix}    return value\n",
+        (
+            f"def transform(value):\n{prefix}"
+            "    return eval(\n"
+            "        value\n"
+            "    )\n"
+        ),
+        review_id="partial-indented-hunk",
+    )
+
+    result = DetectDangerousCallSkill(adapter=EmptyBanditAdapter()).run(
+        artifact,
+        now=FIXED_TIME,
+    )
+
+    assert result.coverage.status is CoverageStatus.COMPLETED
+    assert len(result.findings) == 1
+    assert result.findings[0].locations[0].start_line == 10
 
 
 @pytest.mark.parametrize(
@@ -317,6 +574,18 @@ def test_suite_is_ordered_aggregated_and_cloud_safe_after_masking(tmp_path: Path
     assert result.sanitized_diff.cloud_safe is True
     assert secret not in result.model_dump_json()
     assert any("<REDACTED:" in line.content for line in result.sanitized_diff.lines)
+    assert all(
+        line.content_hash == hashlib.sha256(line.content.encode("utf-8")).hexdigest()
+        for line in result.sanitized_diff.lines
+    )
+    assert all(line.source_content_hash for line in result.sanitized_diff.lines)
+    assert result.sanitized_diff.redaction_ids == tuple(
+        dict.fromkeys(
+            redaction_id
+            for line in result.sanitized_diff.lines
+            for redaction_id in line.redaction_ids
+        )
+    )
     assert set(result.verified_e3_evidence_ids) == {
         proof.evidence_id
         for proof in result.evidence
@@ -370,7 +639,11 @@ def test_manifests_publish_strict_versioned_contracts() -> None:
         "detect_injection",
         "detect_dangerous_call",
     }
-    assert all(item.version == "1.0.0" for item in manifests)
+    assert {item.name: item.version for item in manifests} == {
+        "detect_secret": "1.0.0",
+        "detect_injection": "1.1.0",
+        "detect_dangerous_call": "1.1.0",
+    }
     assert all(item.deterministic is True for item in manifests)
     assert all(item.max_retries == 0 for item in manifests)
     assert all(item.failure_behavior == "emit_e0_and_failed_coverage" for item in manifests)

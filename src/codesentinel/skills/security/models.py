@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated, Literal, Self
@@ -19,6 +20,7 @@ from codesentinel.domain.models import ContractModel
 from codesentinel.gitdiff import DiffLineKind
 
 NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+Sha256 = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
 
 
 class SkillErrorCode(StrEnum):
@@ -34,7 +36,7 @@ class SkillErrorCode(StrEnum):
 
 class SkillManifest(ContractModel):
     name: Literal["detect_secret", "detect_injection", "detect_dangerous_call"]
-    version: Literal["1.0.0"] = "1.0.0"
+    version: Literal["1.0.0", "1.1.0"] = "1.0.0"
     purpose: NonEmptyStr
     owner_agent: Literal["security-scanner"] = "security-scanner"
     allowed_stage: Literal["reviews_running"] = "reviews_running"
@@ -90,12 +92,34 @@ class SanitizedDiffLine(ContractModel):
     side: Literal["old", "new"]
     line_number: int = Field(ge=1)
     content: str
-    content_hash: NonEmptyStr
+    source_content_hash: Sha256
+    content_hash: Sha256
+    redaction_ids: tuple[NonEmptyStr, ...] = ()
+
+    @field_validator("redaction_ids")
+    @classmethod
+    def line_redaction_ids_must_be_unique(
+        cls,
+        value: tuple[str, ...],
+    ) -> tuple[str, ...]:
+        if len(value) != len(set(value)):
+            raise ValueError("line redaction_ids must be unique")
+        return value
+
+    @model_validator(mode="after")
+    def hashes_and_redaction_state_must_match(self) -> Self:
+        if hashlib.sha256(self.content.encode("utf-8")).hexdigest() != self.content_hash:
+            raise ValueError("content_hash must match sanitized line content")
+        if not self.redaction_ids and self.source_content_hash != self.content_hash:
+            raise ValueError("unredacted line content must match its source hash")
+        if self.redaction_ids and self.source_content_hash == self.content_hash:
+            raise ValueError("redacted line content must differ from its source")
+        return self
 
 
 class SanitizedDiffView(ContractModel):
     schema_name: Literal["SanitizedDiffView"] = "SanitizedDiffView"
-    schema_version: Literal["1.0.0"] = "1.0.0"
+    schema_version: Literal["1.1.0"] = "1.1.0"
     review_id: NonEmptyStr
     source_diff_hash: NonEmptyStr
     lines: tuple[SanitizedDiffLine, ...]
@@ -114,6 +138,22 @@ class SanitizedDiffView(ContractModel):
     def unsafe_views_must_not_expose_source_lines(self) -> Self:
         if not self.cloud_safe and self.lines:
             raise ValueError("unsafe sanitized views must not expose source lines")
+        line_keys = tuple(
+            (item.file_path, item.hunk_id, item.side, item.line_number)
+            for item in self.lines
+        )
+        if len(line_keys) != len(set(line_keys)):
+            raise ValueError("sanitized line locations must be unique")
+        if self.cloud_safe:
+            applied_ids = tuple(
+                dict.fromkeys(
+                    redaction_id
+                    for item in self.lines
+                    for redaction_id in item.redaction_ids
+                )
+            )
+            if self.redaction_ids != applied_ids:
+                raise ValueError("view redaction_ids must match exposed line redactions")
         return self
 
 
@@ -184,7 +224,7 @@ class SecuritySkillResult(ContractModel):
 
 class SecurityScanResult(ContractModel):
     schema_name: Literal["SecurityScanResult"] = "SecurityScanResult"
-    schema_version: Literal["1.0.0"] = "1.0.0"
+    schema_version: Literal["1.1.0"] = "1.1.0"
     review_id: NonEmptyStr
     status: SkillStatus
     skill_results: tuple[SecuritySkillResult, ...] = Field(min_length=3, max_length=3)

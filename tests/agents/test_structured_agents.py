@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -519,6 +520,82 @@ def test_secret_scan_failure_blocks_context_before_model_call(tmp_path: Path) ->
         SecurityReviewerContext.from_scan(artifact, scan)
 
     assert captured.value.code is ProviderErrorCode.CONTEXT_UNSAFE
+
+
+def test_forged_cloud_safe_line_is_rejected_even_with_recomputed_hashes(
+    tmp_path: Path,
+) -> None:
+    artifact, scan, _, _, _ = make_contexts(
+        tmp_path,
+        review_id="p7-forged-sanitized-line",
+    )
+    original = scan.sanitized_diff.lines[0]
+    foreign_content = "FOREIGN_UNSANITIZED_CONTENT"
+    foreign_hash = hashlib.sha256(foreign_content.encode("utf-8")).hexdigest()
+    forged_line = original.model_copy(
+        update={
+            "content": foreign_content,
+            "content_hash": foreign_hash,
+            "source_content_hash": foreign_hash,
+        }
+    )
+    forged_view = scan.sanitized_diff.model_copy(
+        update={"lines": (forged_line, *scan.sanitized_diff.lines[1:])}
+    )
+
+    with pytest.raises(ContextBuildError) as captured:
+        DiffAnalyzerContext.from_artifacts(artifact, forged_view)
+
+    assert captured.value.code is ProviderErrorCode.CONTEXT_INVALID
+
+
+def test_sanitized_line_content_hash_is_validated_at_schema_boundary(
+    tmp_path: Path,
+) -> None:
+    _, scan, _, _, _ = make_contexts(
+        tmp_path,
+        review_id="p7-invalid-content-hash",
+    )
+    payload = scan.sanitized_diff.lines[0].model_dump(mode="python")
+    payload["content"] = "tampered"
+
+    with pytest.raises(ValueError, match="content_hash"):
+        type(scan.sanitized_diff.lines[0]).model_validate(payload)
+
+
+def test_forged_redaction_cannot_inject_new_content(tmp_path: Path) -> None:
+    secret = "sk-" + ("R" * 32)
+    artifact = make_artifact(
+        tmp_path,
+        "VALUE = 1\n",
+        f"VALUE = 1\nAPI_KEY = {secret!r}\n",
+        review_id="p7-forged-redaction",
+    )
+    scan = security_suite().run(artifact)
+    index = next(
+        index
+        for index, line in enumerate(scan.sanitized_diff.lines)
+        if line.redaction_ids
+    )
+    original = scan.sanitized_diff.lines[index]
+    injected = original.content + "; FOREIGN_CALL()"
+    forged_line = original.model_copy(
+        update={
+            "content": injected,
+            "content_hash": hashlib.sha256(injected.encode("utf-8")).hexdigest(),
+        }
+    )
+    forged_lines = list(scan.sanitized_diff.lines)
+    forged_lines[index] = forged_line
+    forged_view = scan.sanitized_diff.model_copy(update={"lines": tuple(forged_lines)})
+
+    with pytest.raises(ContextBuildError) as captured:
+        SecurityReviewerContext.from_scan(
+            artifact,
+            scan.model_copy(update={"sanitized_diff": forged_view}),
+        )
+
+    assert captured.value.code is ProviderErrorCode.CONTEXT_INVALID
 
 
 def test_provider_failure_redacts_api_key_and_discards_reasoning(tmp_path: Path) -> None:

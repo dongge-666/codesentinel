@@ -193,7 +193,24 @@ def test_bundle_is_reproducible_minimal_and_runs_isolated(tmp_path: Path) -> Non
     manifest = json.loads(first.manifest_path.read_text(encoding="utf-8"))
     assert manifest["archive_sha256"] == first.archive_sha256
     assert manifest["source_revision"] == first.source_revision
-    assert manifest["source_dirty"] is True
+    scoped_status = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repository),
+            "status",
+            "--porcelain=v1",
+            "--",
+            "LICENSE",
+            "src/codesentinel/__init__.py",
+            "src/codesentinel/agentteams",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip()
+    assert manifest["source_dirty"] is bool(scoped_status)
 
     with zipfile.ZipFile(first.archive_path) as archive:
         names = set(archive.namelist())

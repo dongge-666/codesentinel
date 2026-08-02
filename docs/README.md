@@ -18,6 +18,7 @@ Completed phase reports:
 - [P7 DeepSeek Provider and structured Agents](progress/P7-deepseek-structured-agents.md)
 - [P8 risk routing, evidence assurance, and targeted recheck](progress/P8-risk-evidence-recheck.md)
 - [P9 local reference runner and CLI](progress/P9-local-reference-runner-cli.md)
+- [R1 security detection correctness remediation](progress/R1-security-correctness.md)
 
 Frozen implementation contracts:
 

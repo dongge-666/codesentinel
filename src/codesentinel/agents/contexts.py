@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import re
 from typing import Annotated, Literal, Self
 
 from pydantic import Field, StringConstraints, model_validator
@@ -10,11 +12,13 @@ from codesentinel.domain import CoverageStatus
 from codesentinel.domain.models import ContractModel, FileChange
 from codesentinel.gitdiff import GitDiffArtifact
 from codesentinel.skills.security import SanitizedDiffView, SecurityScanResult
-from codesentinel.skills.security.base import stable_id
+from codesentinel.skills.security.base import content_hash, stable_id
+from codesentinel.skills.security.common import SourceLine, iter_source_lines
 
 from .models import AgentContextLine, DeterministicFindingSummary, ProviderErrorCode
 
 NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+_REDACTION_TOKEN = re.compile(r"<REDACTED:[A-Z0-9_]+:([0-9a-f]{12})>")
 
 
 class ContextBuildError(ValueError):
@@ -245,6 +249,51 @@ def _validate_sanitized_boundary(
             ProviderErrorCode.CONTEXT_UNSAFE,
             "The diff is not approved for cloud model use.",
         )
+    expected_lines = iter_source_lines(
+        artifact,
+        python_only=True,
+        include_context=True,
+        include_deletions=True,
+    )
+    expected_keys = tuple(_source_line_key(item) for item in expected_lines)
+    actual_keys = tuple(_sanitized_line_key(item) for item in sanitized.lines)
+    if actual_keys != expected_keys:
+        raise ContextBuildError(
+            ProviderErrorCode.CONTEXT_INVALID,
+            "Sanitized diff line provenance does not match the Git artifact.",
+        )
+    applied_redaction_ids = tuple(
+        dict.fromkeys(
+            redaction_id for line in sanitized.lines for redaction_id in line.redaction_ids
+        )
+    )
+    if applied_redaction_ids != sanitized.redaction_ids:
+        raise ContextBuildError(
+            ProviderErrorCode.CONTEXT_INVALID,
+            "Sanitized diff redaction lineage is inconsistent.",
+        )
+    for source_line, sanitized_line in zip(expected_lines, sanitized.lines, strict=True):
+        if sanitized_line.source_content_hash != content_hash(source_line.content):
+            raise ContextBuildError(
+                ProviderErrorCode.CONTEXT_INVALID,
+                "Sanitized diff source hash does not match the Git artifact.",
+            )
+        if sanitized_line.content_hash != content_hash(sanitized_line.content):
+            raise ContextBuildError(
+                ProviderErrorCode.CONTEXT_INVALID,
+                "Sanitized diff content hash is invalid.",
+            )
+        if sanitized_line.redaction_ids:
+            if not _is_redaction_only(source_line.content, sanitized_line.content):
+                raise ContextBuildError(
+                    ProviderErrorCode.CONTEXT_INVALID,
+                    "Sanitized diff contains an invalid redaction transformation.",
+                )
+        elif sanitized_line.content != source_line.content:
+            raise ContextBuildError(
+                ProviderErrorCode.CONTEXT_INVALID,
+                "Unredacted sanitized content differs from the Git artifact.",
+            )
 
 
 def _git_artifact_id(artifact: GitDiffArtifact) -> str:
@@ -272,6 +321,36 @@ def _context_lines(sanitized: SanitizedDiffView) -> tuple[AgentContextLine, ...]
             content_hash=item.content_hash,
         )
         for item in sanitized.lines
+    )
+
+
+def _source_line_key(line: SourceLine) -> tuple[str, str, object, str, int]:
+    return (line.file_path, line.hunk_id, line.kind, line.side, line.line_number)
+
+
+def _sanitized_line_key(line) -> tuple[str, str, object, str, int]:
+    return (line.file_path, line.hunk_id, line.kind, line.side, line.line_number)
+
+
+def _is_redaction_only(source: str, sanitized: str) -> bool:
+    matches = tuple(_REDACTION_TOKEN.finditer(sanitized))
+    if not matches:
+        return False
+    pattern_parts: list[str] = []
+    prefixes: list[str] = []
+    cursor = 0
+    for match in matches:
+        pattern_parts.append(re.escape(sanitized[cursor : match.start()]))
+        pattern_parts.append("(.+?)")
+        prefixes.append(match.group(1))
+        cursor = match.end()
+    pattern_parts.append(re.escape(sanitized[cursor:]))
+    source_match = re.fullmatch("".join(pattern_parts), source, flags=re.DOTALL)
+    if source_match is None:
+        return False
+    return all(
+        hashlib.sha256(value.encode("utf-8")).hexdigest().startswith(prefix)
+        for value, prefix in zip(source_match.groups(), prefixes, strict=True)
     )
 
 

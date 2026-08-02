@@ -364,6 +364,48 @@ def test_deterministic_secret_blocks_and_never_persists_plaintext(tmp_path: Path
     assert "B001" in execution.report.decision.matched_rule_ids
 
 
+def test_multiline_dangerous_change_cannot_reach_pass(tmp_path: Path) -> None:
+    repository, workspace = make_repository(
+        tmp_path,
+        (
+            "import subprocess\n"
+            "def unsafe(user_input):\n"
+            "    subprocess.run(\n"
+            "        user_input,\n"
+            "        shell=True,\n"
+            "    )\n"
+            "    return eval(\n"
+            "        user_input\n"
+            "    )\n"
+        ),
+    )
+
+    execution = make_runner(workspace).run(
+        make_request(repository),
+        review_id="p9-multiline-dangerous",
+    )
+
+    assert execution.report.status is GateStatus.BLOCK
+    assert execution.report.exit_code == 1
+    assert execution.report.decision.blocking_finding_ids
+
+
+def test_benign_dynamic_select_explanation_can_reach_pass(tmp_path: Path) -> None:
+    repository, workspace = make_repository(
+        tmp_path,
+        'def explain(choice):\n    return f"SELECT a review strategy: {choice}"\n',
+    )
+
+    execution = make_runner(workspace).run(
+        make_request(repository),
+        review_id="p9-benign-select",
+    )
+
+    assert execution.report.status is GateStatus.PASS
+    assert execution.report.exit_code == 0
+    assert execution.report.decision.blocking_finding_ids == ()
+
+
 def test_medium_model_finding_needs_review_and_exhausts_one_recheck(tmp_path: Path) -> None:
     repository, workspace = make_repository(
         tmp_path,

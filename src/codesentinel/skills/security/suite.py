@@ -255,11 +255,12 @@ class SecuritySkillSuite:
                 reason="The diff exceeds the approved changed-line limit.",
             )
 
-        masked_by_location = {
-            (item.file_path, item.hunk_id, item.side, item.line_number): item.masked_content
-            for item in redactions
-        }
+        redactions_by_location: dict[tuple[str, str, str, int], list] = {}
+        for item in redactions:
+            key = (item.file_path, item.hunk_id, item.side, item.line_number)
+            redactions_by_location.setdefault(key, []).append(item)
         lines = []
+        applied_redaction_ids: list[str] = []
         for source_line in iter_source_lines(
             artifact,
             python_only=True,
@@ -272,7 +273,14 @@ class SecuritySkillSuite:
                 source_line.side,
                 source_line.line_number,
             )
-            content = masked_by_location.get(key, source_line.content)
+            line_redactions = tuple(redactions_by_location.get(key, ()))
+            content = (
+                line_redactions[0].masked_content
+                if line_redactions
+                else source_line.content
+            )
+            line_redaction_ids = tuple(item.redaction_id for item in line_redactions)
+            applied_redaction_ids.extend(line_redaction_ids)
             lines.append(
                 SanitizedDiffLine(
                     file_path=source_line.file_path,
@@ -281,14 +289,16 @@ class SecuritySkillSuite:
                     side=source_line.side,
                     line_number=source_line.line_number,
                     content=content,
+                    source_content_hash=content_hash(source_line.content),
                     content_hash=content_hash(content),
+                    redaction_ids=line_redaction_ids,
                 )
             )
         return SanitizedDiffView(
             review_id=artifact.review_id,
             source_diff_hash=artifact.diff_hash,
             lines=tuple(lines),
-            redaction_ids=redaction_ids,
+            redaction_ids=tuple(dict.fromkeys(applied_redaction_ids)),
             cloud_safe=True,
             reason="Secret detection completed and every detected value was masked locally.",
         )

@@ -50,17 +50,17 @@ detector_versions = ["1.0.0"]
 [[e3_qualifiers]]
 source = "rule"
 detector_name = "detect_injection"
-detector_versions = ["1.0.0"]
+detector_versions = ["1.0.0", "1.1.0"]
 
 [[e3_qualifiers]]
 source = "static_tool"
 detector_name = "detect_injection"
-detector_versions = ["1.0.0"]
+detector_versions = ["1.0.0", "1.1.0"]
 
 [[e3_qualifiers]]
 source = "rule"
 detector_name = "detect_dangerous_call"
-detector_versions = ["1.0.0"]
+detector_versions = ["1.0.0", "1.1.0"]
 
 [[e3_qualifiers]]
 source = "system"

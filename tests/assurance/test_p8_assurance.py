@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -85,7 +86,9 @@ def make_sanitized(*contents: str) -> SanitizedDiffView:
                 side="new",
                 line_number=index,
                 content=content,
-                content_hash=f"line-hash-{index}",
+                source_content_hash=hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                content_hash=hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                redaction_ids=(),
             )
             for index, content in enumerate(contents, start=1)
         ),
@@ -154,14 +157,15 @@ def test_rule_routing_survives_semantic_failure() -> None:
 
 
 def test_matching_rule_and_semantic_hint_create_one_hybrid_route() -> None:
+    source = 'cursor.execute(f"SELECT * FROM users WHERE id={user_id}")'
     result = RiskRouter().build(
         make_diff(),
-        make_sanitized('cursor.execute(f"SELECT * FROM users WHERE id={user_id}")'),
+        make_sanitized(source),
         semantic_hints=(
             SemanticRiskHint(
                 category=RiskCategory.SQL_INJECTION,
                 severity_hint=Severity.HIGH,
-                locations=(make_location(),),
+                locations=(make_location(content=source),),
                 reason="Semantic analysis identified user-controlled query construction.",
             ),
         ),
@@ -176,14 +180,18 @@ def test_matching_rule_and_semantic_hint_create_one_hybrid_route() -> None:
     assert result.semantic_status == "success"
 
 
-def make_location(*, line: int = 1) -> CodeLocation:
+def make_location(*, line: int = 1, content: str | None = None) -> CodeLocation:
     return CodeLocation(
         file_path="src/app.py",
         start_line=line,
         end_line=line,
         side="new",
         hunk_id="hunk-p8",
-        snippet_hash=f"line-hash-{line}",
+        snippet_hash=(
+            hashlib.sha256(content.encode("utf-8")).hexdigest()
+            if content is not None
+            else f"line-hash-{line}"
+        ),
     )
 
 

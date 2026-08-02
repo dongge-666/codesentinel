@@ -279,9 +279,17 @@ class PolicyDocument(PolicyModel):
         }
         expected_qualifiers = {
             (EvidenceSource.RULE, "detect_secret", ("1.0.0",)),
-            (EvidenceSource.RULE, "detect_injection", ("1.0.0",)),
-            (EvidenceSource.STATIC_TOOL, "detect_injection", ("1.0.0",)),
-            (EvidenceSource.RULE, "detect_dangerous_call", ("1.0.0",)),
+            (EvidenceSource.RULE, "detect_injection", ("1.0.0", "1.1.0")),
+            (
+                EvidenceSource.STATIC_TOOL,
+                "detect_injection",
+                ("1.0.0", "1.1.0"),
+            ),
+            (
+                EvidenceSource.RULE,
+                "detect_dangerous_call",
+                ("1.0.0", "1.1.0"),
+            ),
             (EvidenceSource.SYSTEM, "policy_integrity", ("1.0.0",)),
         }
         if qualifier_keys != expected_qualifiers:
