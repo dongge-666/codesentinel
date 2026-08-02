@@ -28,6 +28,8 @@ Reviewed execution plans:
 
 - [P10-3 Worker Skills deployment and structured-delivery plan](design/P10-3-worker-skills-plan.md)
   (`CONDITIONAL GO`; P10-3A remediation re-audit passed, P10-3B not started)
+- [P10-3B controlled Worker deployment and rollback plan](design/P10-3B-controlled-deployment-plan.md)
+  (`CONDITIONAL GO`; plan-only review complete, live deployment not approved)
 
 P10 subphase records:
 

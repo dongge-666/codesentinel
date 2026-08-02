@@ -245,10 +245,12 @@ Stop the current slice and report without proceeding to another Worker when:
 
 ## 11. Approval gates and recommended next action
 
-This plan review, P10-3A offline implementation, strict adversarial audit, and
-remediation re-audit are complete. P10-3B deployment is not approved yet.
+This plan review, P10-3A implementation, R1 correctness remediation, and their
+independent commits and pushes are complete. P10-3B deployment remains not
+approved.
 
-The next recommended action is to review the remediated P10-3A evidence and, if
-accepted, separately approve its baseline commit and push. Only after the clean
-commit exists should the user review readiness and separately approve P10-3B
-deployment. No P10-3B action should start earlier.
+The post-R1 execution gates, exact clean-baseline rule, staged Worker canaries,
+acceptance criteria, and rollback matrix are frozen in
+[`P10-3B-controlled-deployment-plan.md`](P10-3B-controlled-deployment-plan.md).
+That plan must be independently reviewed, committed, and pushed before any
+P10-3B readiness or deployment action begins.
