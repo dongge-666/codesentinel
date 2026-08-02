@@ -12,6 +12,8 @@ from pydantic import ValidationError
 from codesentinel.agentteams.deploy_guard import (
     APPROVED_SKILL,
     APPROVED_WORKER,
+    EXPECTED_DIFF_POLICY_SEMANTIC_SHA256,
+    EXPECTED_DIFF_POLICY_SOURCE_SHA256,
     EXPECTED_OFFICIAL_SCRIPT_SHA256,
     EXPECTED_PACKAGE_FILES,
     EXPECTED_ROUTE,
@@ -29,10 +31,15 @@ from codesentinel.agentteams.deploy_guard import (
     build_package_manifest_from_directory,
     command_evidence,
     execute_guarded_probe,
+    policy_semantic_sha256,
+    policy_source_sha256,
     redact_sensitive_text,
     registry_semantic_sha256,
+    reviewed_diff_policy,
     validate_command_result,
     validate_registry_restored,
+    validate_reviewed_policy_readback,
+    validate_reviewed_policy_source,
 )
 from codesentinel.agentteams.serialization import sha256_hex
 
@@ -106,6 +113,14 @@ def registry(skills: list[str] | None = None, *, timestamp: str = "before") -> d
             },
         },
     }
+
+
+def minio_reordered_policy() -> dict:
+    value = reviewed_diff_policy()
+    value["Statement"][1]["Condition"]["StringLike"]["s3:prefix"].reverse()
+    value["Statement"][2]["Action"] = sorted(value["Statement"][2]["Action"])
+    value["Statement"][2]["Resource"] = sorted(value["Statement"][2]["Resource"])
+    return value
 
 
 def request(
@@ -468,6 +483,72 @@ def test_registry_semantics_ignore_only_managed_timestamps() -> None:
     assignment_changed = registry([], timestamp="after")
     with pytest.raises(DeploymentGuardError, match="registry_restore_mismatch"):
         validate_registry_restored(before, assignment_changed)
+
+
+def test_policy_contract_distinguishes_source_exact_and_server_semantic_hashes() -> None:
+    source = reviewed_diff_policy()
+    readback = minio_reordered_policy()
+
+    assert policy_source_sha256(source) == EXPECTED_DIFF_POLICY_SOURCE_SHA256
+    assert policy_semantic_sha256(source) == EXPECTED_DIFF_POLICY_SEMANTIC_SHA256
+    assert policy_source_sha256(readback) != EXPECTED_DIFF_POLICY_SOURCE_SHA256
+    assert policy_semantic_sha256(readback) == EXPECTED_DIFF_POLICY_SEMANTIC_SHA256
+    validate_reviewed_policy_source(source)
+    validate_reviewed_policy_readback(readback)
+
+
+def test_reviewed_policy_returns_a_fresh_copy() -> None:
+    changed = reviewed_diff_policy()
+    changed["Statement"][0]["Action"].append("s3:*")
+    assert "s3:*" not in reviewed_diff_policy()["Statement"][0]["Action"]
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "extra_action",
+        "broader_resource",
+        "removed_condition",
+        "reordered_statements",
+        "duplicate_action",
+        "extra_statement_field",
+    ],
+)
+def test_policy_semantic_contract_rejects_scope_or_structure_drift(
+    mutation: str,
+) -> None:
+    value = minio_reordered_policy()
+    if mutation == "extra_action":
+        value["Statement"][2]["Action"].append("s3:ListAllMyBuckets")
+    elif mutation == "broader_resource":
+        value["Statement"][2]["Resource"] = ["arn:aws:s3:::hiclaw-storage/*"]
+    elif mutation == "removed_condition":
+        value["Statement"][1].pop("Condition")
+    elif mutation == "reordered_statements":
+        value["Statement"][0], value["Statement"][1] = (
+            value["Statement"][1],
+            value["Statement"][0],
+        )
+    elif mutation == "duplicate_action":
+        value["Statement"][2]["Action"].append(value["Statement"][2]["Action"][0])
+    else:
+        value["Statement"][2]["Sid"] = "unexpected"
+
+    with pytest.raises(DeploymentGuardError) as captured:
+        validate_reviewed_policy_readback(value)
+    assert captured.value.code == "policy_semantic_mismatch"
+
+
+def test_policy_source_contract_rejects_even_semantic_array_reordering() -> None:
+    with pytest.raises(DeploymentGuardError) as captured:
+        validate_reviewed_policy_source(minio_reordered_policy())
+    assert captured.value.code == "policy_source_mismatch"
+
+
+def test_policy_hash_rejects_non_json_values() -> None:
+    with pytest.raises(DeploymentGuardError) as captured:
+        policy_semantic_sha256({"invalid": {"not-json"}})
+    assert captured.value.code == "policy_invalid"
 
 
 def test_redaction_covers_assignment_bearer_and_known_token_shapes() -> None:

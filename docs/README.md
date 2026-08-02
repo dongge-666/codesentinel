@@ -20,6 +20,14 @@ Completed phase reports:
 - [P9 local reference runner and CLI](progress/P9-local-reference-runner-cli.md)
 - [R1 security detection correctness remediation](progress/R1-security-correctness.md)
 - [R2-1 offline transactional deployment guard](progress/R2-1-offline-deployment-guard.md)
+- [R2-2 live read-only infrastructure preflight](progress/R2-2-live-read-only-preflight.md)
+- [R2-3 bounded Manager quiescence window](progress/R2-3-bounded-manager-quiescence.md)
+- [R2-4 Diff policy probe attempt 1](progress/R2-4-diff-policy-probe-attempt-1.md)
+- [R2-4 policy canonicalization amendment](progress/R2-4-policy-canonicalization-amendment.md)
+- [R2-4 Diff policy probe attempt 2](progress/R2-4-diff-policy-probe-attempt-2.md)
+- [R2-5 zero-model Diff deployment and rollback proof](progress/R2-5-diff-deployment-rollback.md)
+- [R2-6 evidence closure](progress/R2-6-evidence-closure.md)
+- [R2 machine-readable execution evidence](progress/R2-execution-evidence.json)
 
 Frozen implementation contracts:
 
@@ -32,7 +40,7 @@ Reviewed execution plans:
 - [P10-3B controlled Worker deployment and rollback plan](design/P10-3B-controlled-deployment-plan.md)
   (`CONDITIONAL GO`; Gate B retry requires R2 remediation and new approval)
 - [R2 AgentTeams infrastructure remediation plan](design/R2-agentteams-infrastructure-remediation-plan.md)
-  (`CONDITIONAL GO`; R2-1 offline guard complete, live mutation not approved)
+  (`COMPLETE`; R2-6 passed, fresh Gate B refresh is next)
 
 P10 subphase records:
 

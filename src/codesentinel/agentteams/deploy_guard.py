@@ -37,6 +37,44 @@ EXPECTED_OFFICIAL_SCRIPT_SHA256 = (
 EXPECTED_ROUTE = "hiclaw-gateway/deepseek-v4-pro"
 QUIET_WINDOW_SECONDS = 130
 MAX_COMMAND_OUTPUT_CHARS = 16_000
+REVIEWED_DIFF_POLICY_NAME = "codesentinel-manager-diff-deployer-v1"
+EXPECTED_DIFF_POLICY_SOURCE_SHA256 = (
+    "a4ba569aea81bb06c1ea38c58d1cde6c25467513bf86a250ea27153ccbf6362f"
+)
+EXPECTED_DIFF_POLICY_SEMANTIC_SHA256 = (
+    "02e7b1ccae93d69563f9a01b45bfd5929aa35fbcf3ac59b67ecec6abe695f148"
+)
+
+_REVIEWED_DIFF_POLICY_JSON = """{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetBucketLocation"],
+      "Resource": ["arn:aws:s3:::hiclaw-storage"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": ["arn:aws:s3:::hiclaw-storage"],
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "agents/cs-diff-analyzer/skills/codesentinel-diff-review",
+            "agents/cs-diff-analyzer/skills/codesentinel-diff-review/*"
+          ]
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": [
+        "arn:aws:s3:::hiclaw-storage/agents/cs-diff-analyzer/skills/codesentinel-diff-review/*"
+      ]
+    }
+  ]
+}"""
 
 EXPECTED_PACKAGE_FILES = frozenset(
     {
@@ -414,6 +452,94 @@ def _canonical_hash(value: Any) -> str:
     if isinstance(value, BaseModel):
         value = value.model_dump(mode="json")
     return sha256_hex(canonical_json_bytes(value))
+
+
+def _policy_json_object(value: Mapping[str, Any]) -> dict[str, Any]:
+    try:
+        normalized = json.loads(
+            json.dumps(
+                value,
+                allow_nan=False,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            )
+        )
+    except (TypeError, ValueError) as exc:
+        raise DeploymentGuardError(
+            "policy_invalid", "policy is not a JSON-compatible object"
+        ) from exc
+    if not isinstance(normalized, dict):
+        raise DeploymentGuardError("policy_invalid", "policy root is not an object")
+    return normalized
+
+
+def _policy_hash_without_newline(value: Mapping[str, Any]) -> str:
+    serialized = canonical_json_bytes(_policy_json_object(value))
+    if not serialized.endswith(b"\n"):
+        raise RuntimeError("canonical JSON serializer lost its newline contract")
+    return sha256_hex(serialized[:-1])
+
+
+def _normalize_policy_string_arrays(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _normalize_policy_string_arrays(item) for key, item in value.items()}
+    if isinstance(value, list):
+        normalized = [_normalize_policy_string_arrays(item) for item in value]
+        if all(isinstance(item, str) for item in normalized):
+            return sorted(normalized)
+        return normalized
+    return value
+
+
+def reviewed_diff_policy() -> dict[str, Any]:
+    """Return a fresh copy of the frozen Diff-only policy source."""
+
+    value = json.loads(_REVIEWED_DIFF_POLICY_JSON)
+    if not isinstance(value, dict):  # pragma: no cover - frozen module constant
+        raise RuntimeError("reviewed Diff policy root is not an object")
+    return value
+
+
+def policy_source_sha256(value: Mapping[str, Any]) -> str:
+    """Hash exact reviewed source semantics while preserving array order."""
+
+    return _policy_hash_without_newline(value)
+
+
+def policy_semantic_sha256(value: Mapping[str, Any]) -> str:
+    """Hash MinIO readback after sorting only semantically unordered strings."""
+
+    normalized = _normalize_policy_string_arrays(_policy_json_object(value))
+    return _policy_hash_without_newline(normalized)
+
+
+def validate_reviewed_policy_source(value: Mapping[str, Any]) -> None:
+    """Require the immutable policy source, including reviewed array order."""
+
+    expected = reviewed_diff_policy()
+    if (
+        _policy_json_object(value) != expected
+        or policy_source_sha256(value) != EXPECTED_DIFF_POLICY_SOURCE_SHA256
+    ):
+        raise DeploymentGuardError(
+            "policy_source_mismatch", "policy source differs from the reviewed contract"
+        )
+
+
+def validate_reviewed_policy_readback(value: Mapping[str, Any]) -> None:
+    """Allow only MinIO string-array reordering, never policy scope drift."""
+
+    expected = _normalize_policy_string_arrays(reviewed_diff_policy())
+    actual = _normalize_policy_string_arrays(_policy_json_object(value))
+    if (
+        actual != expected
+        or policy_semantic_sha256(value) != EXPECTED_DIFF_POLICY_SEMANTIC_SHA256
+    ):
+        raise DeploymentGuardError(
+            "policy_semantic_mismatch",
+            "policy readback changes effects, actions, resources, conditions, or statements",
+        )
 
 
 def _normalized_registry(value: Mapping[str, Any]) -> dict[str, Any]:

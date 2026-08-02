@@ -104,6 +104,21 @@ Before live activation, the accepted R2 plan requires:
 4. separate approval for the exact Diff-only MinIO policy;
 5. separate approval for the zero-model deployment and rollback probe.
 
+The Diff-only policy gate uses two hashes. The immutable reviewed source must
+match `a4ba569aea81bb06c1ea38c58d1cde6c25467513bf86a250ea27153ccbf6362f`.
+MinIO readback may reorder only arrays containing exclusively strings and must
+then match `02e7b1ccae93d69563f9a01b45bfd5929aa35fbcf3ac59b67ecec6abe695f148`
+and the complete normalized source object. Statement order, duplicates,
+actions, resources, conditions, prefixes, and fields remain exact fail-closed
+boundaries.
+
 Direct Worker `docker cp`, broad MinIO `readwrite`, vendor-image editing,
 container restart/recreation, and any Security or Quality deployment remain
 forbidden.
+
+R2 completed the zero-model Diff deployment and rollback proof on 2026-08-02.
+The approved operating baseline retains only
+`codesentinel-manager-diff-deployer-v1`, requires the pinned official push and
+sync script hashes, pauses Heartbeat for a new 130-second quiescence proof,
+and accepts deployment only after Manager, Worker-remote, and Worker-local
+nine-file hashes agree. A later semantic Canary remains a separate gate.

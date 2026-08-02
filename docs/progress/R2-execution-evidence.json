@@ -1,0 +1,117 @@
+{
+  "schema_name": "CodeSentinelR2ExecutionEvidence",
+  "schema_version": "1.0.0",
+  "result": "PASS",
+  "closed_at": "2026-08-02T14:05:21.1305277Z",
+  "source": {
+    "revision": "7f8b3a1589c00ba4fde182b13ed703692804f2bb",
+    "origin_revision": "7f8b3a1589c00ba4fde182b13ed703692804f2bb",
+    "runtime_sha256": "5cb06f2f901db31e10fefc0eaa48522938c28643eaba563fbaebdc2b8ee6f718",
+    "runtime_manifest_sha256": "3d55e436118d16a2f22ed749f612282d5d02562bc842b2f1f8f54b274ffd48f8",
+    "package_tree_sha256": "538ccad34fda714d5a7a89eba54cb7c68de8c79b926d11ccceae9e1453d8c3ab",
+    "package_file_count": 9
+  },
+  "accepted_attempt": {
+    "number": 4,
+    "helper_sha256": "738fb9cc31354a06e86e2f8d9f353e768ee9813da3f160523f8d509fff2bf20e",
+    "result_sha256": "a3995ecc747e139053a3a1a0d701d3818c012be1dd19d396c65eb35f23a9ebfa",
+    "json_parse_verified": true,
+    "operation_errors": 0
+  },
+  "rejected_attempts": [
+    {
+      "number": 1,
+      "result_sha256": "e8dc8e25f4220f466162ffc9af2592452bc1ea014b1d8401c7f8d03a407e82dc",
+      "reason": "registry newline escaping and heartbeat log matcher",
+      "safe_post_state_verified": true
+    },
+    {
+      "number": 2,
+      "result_sha256": "670e379afec22e5be1a589156e0d68c104cab7cb0989accd198263e04ba53ab6",
+      "reason": "non-ASCII evidence-filter regex decoding",
+      "safe_post_state_verified": true
+    },
+    {
+      "number": 3,
+      "result_sha256": "9bafffce882a3a88452b3a124b564c10173407efb1c43a4714d9018605347518",
+      "reason": "unparseable evidence JSON from decoded table glyphs",
+      "safe_post_state_verified": true
+    }
+  ],
+  "pinned_tools": {
+    "official_push_sha256": "71005e21a23da0914e89c4fdeea66bb8b87270a2d492e13ee367867d03c5875c",
+    "hiclaw_sync_sha256": "d8ae2686dd4e9ac4e48d377c7d1a3ca866d494f5f543e0aa5e7cb6ddcf8f85e4"
+  },
+  "policy": {
+    "name": "codesentinel-manager-diff-deployer-v1",
+    "semantic_sha256": "02e7b1ccae93d69563f9a01b45bfd5929aa35fbcf3ac59b67ecec6abe695f148",
+    "attached_users": 1,
+    "attached_groups": 0,
+    "subject_fingerprint": "37a8eec1ce19687d132fe29051dca629d164e2c4958ba141d5f4133a33f0688f"
+  },
+  "heartbeat": {
+    "sha256": "133b595951f10d4d0f418bcfda39532b0bcab3b022578544397c2ca0ed69ecae",
+    "enabled": true,
+    "disable_log_observed": true,
+    "restore_log_observed": true,
+    "quiet_seconds": 130,
+    "quiet_manager_call_count": 125
+  },
+  "deployment_proof": {
+    "manager_remote_file_count": 9,
+    "worker_remote_file_count": 9,
+    "manager_remote_tree_match": true,
+    "worker_remote_tree_match": true,
+    "worker_local_tree_match": true,
+    "registry_assignment_verified": true,
+    "official_sync_completed": true
+  },
+  "rollback_proof": {
+    "completed": true,
+    "diff_remote_objects": 0,
+    "diff_local_absent": true,
+    "central_source_absent": true,
+    "registry_restored": true,
+    "registry_semantic_sha256": "994cd827cf265782b449661ae81a56c6f339be47eeef2e55cdfbca4d7615f05e",
+    "recoverable_worker_backup_present": true,
+    "recoverable_central_backup_present": true
+  },
+  "usage": {
+    "before": {
+      "manager": 125,
+      "diff": 4,
+      "security": 6,
+      "quality": 3
+    },
+    "after_deploy": {
+      "manager": 125,
+      "diff": 4,
+      "security": 6,
+      "quality": 3
+    },
+    "final": {
+      "manager": 125,
+      "diff": 4,
+      "security": 6,
+      "quality": 3
+    }
+  },
+  "final_state": {
+    "routes": {
+      "manager": "hiclaw-gateway/deepseek-v4-pro",
+      "diff": "hiclaw-gateway/deepseek-v4-pro",
+      "security": "hiclaw-gateway/deepseek-v4-pro",
+      "quality": "hiclaw-gateway/deepseek-v4-pro"
+    },
+    "registry_skills_null": true,
+    "active_tasks": 0,
+    "matrix_events_created": 0,
+    "model_calls_created": 0,
+    "security_remote_objects": 0,
+    "quality_remote_objects": 0,
+    "security_local_absent": true,
+    "quality_local_absent": true,
+    "agentteams_containers": 5,
+    "dify_running": false
+  }
+}

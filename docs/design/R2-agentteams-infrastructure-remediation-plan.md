@@ -4,7 +4,7 @@ Date: 2026-08-02
 
 Plan review result: **CONDITIONAL GO**
 
-Execution status: **R2-1 OFFLINE COMPLETE; no infrastructure mutation is authorized**
+Execution status: **R2-6 PASSED; INFRASTRUCTURE REMEDIATION COMPLETE**
 
 This plan remediates the two infrastructure blockers observed during the first
 P10-3B Diff Worker canary attempt. It does not retry that canary, deploy
@@ -183,6 +183,22 @@ The exact policy template is:
 }
 ```
 
+R2-4 uses two non-interchangeable policy hashes:
+
+- immutable reviewed source hash, with JSON object keys sorted and every array
+  order preserved:
+  `a4ba569aea81bb06c1ea38c58d1cde6c25467513bf86a250ea27153ccbf6362f`;
+- MinIO readback semantic hash, with JSON object keys sorted, Statement order
+  preserved, and only arrays containing exclusively strings sorted:
+  `02e7b1ccae93d69563f9a01b45bfd5929aa35fbcf3ac59b67ecec6abe695f148`.
+
+The source file must match the first hash before creation. The server readback
+must normalize to the second hash and to the complete normalized source object.
+This permits only MinIO's observed reordering of action, resource, and prefix
+strings. It does not permit duplicate strings, Statement reordering, a removed
+or added field, a new action, a broader resource, a changed condition, or an
+extra prefix.
+
 The policy is attached only to the existing Manager storage identity. The
 identity is passed between local processes without being printed; evidence
 records only a one-way identity fingerprint, policy name, policy hash, and
@@ -300,7 +316,8 @@ already armed. Otherwise restore immediately and stop.
 Scope: one new policy, one attachment, and one disposable object under the
 approved Diff Skill prefix.
 
-1. Create the exact reviewed policy and verify its canonical SHA-256.
+1. Verify the exact reviewed source hash, create that policy, and require both
+   the frozen server-semantic hash and complete normalized-object equality.
 2. Attach it only to the existing Manager storage identity without printing
    that identity or either credential.
 3. Upload a nonce-bound, non-secret probe object beneath
