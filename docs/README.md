@@ -36,3 +36,4 @@ P10 subphase records:
 - [P10-1 contract and runtime-plan freeze](progress/P10-1-contract-runtime-freeze.md)
 - [P10-2 runtime-bundle compatibility slice](progress/P10-2-runtime-bundle-compatibility.md)
 - [P10-3A Worker Skills offline implementation](progress/P10-3A-worker-skills-offline.md)
+- [P10-3B Gate A readiness evidence](progress/P10-3B-gate-a-readiness.md)
