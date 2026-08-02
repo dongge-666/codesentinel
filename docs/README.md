@@ -19,6 +19,7 @@ Completed phase reports:
 - [P8 risk routing, evidence assurance, and targeted recheck](progress/P8-risk-evidence-recheck.md)
 - [P9 local reference runner and CLI](progress/P9-local-reference-runner-cli.md)
 - [R1 security detection correctness remediation](progress/R1-security-correctness.md)
+- [R2-1 offline transactional deployment guard](progress/R2-1-offline-deployment-guard.md)
 
 Frozen implementation contracts:
 
@@ -31,7 +32,7 @@ Reviewed execution plans:
 - [P10-3B controlled Worker deployment and rollback plan](design/P10-3B-controlled-deployment-plan.md)
   (`CONDITIONAL GO`; Gate B retry requires R2 remediation and new approval)
 - [R2 AgentTeams infrastructure remediation plan](design/R2-agentteams-infrastructure-remediation-plan.md)
-  (`CONDITIONAL GO`; documentation/offline work only, live mutation not approved)
+  (`CONDITIONAL GO`; R2-1 offline guard complete, live mutation not approved)
 
 P10 subphase records:
 
