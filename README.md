@@ -18,9 +18,12 @@ diff boundary, schema-validated Diff, Security, and Quality model outputs,
 deterministic risk routing, evidence conflict detection, a single bounded
 targeted recheck, and an auditable end-to-end local reference run.
 
-Real Manager-to-Worker business collaboration is not implemented yet. In
-particular, neither P3 infrastructure smoke testing nor the P9 single-process
-trace may be presented as the P10 multi-agent workflow.
+P10 now has one real, bounded AgentTeams Diff Worker canary with official task
+acknowledgement/submission and an independently validated authoritative
+delivery. This is not yet the full multi-agent workflow: Security, Quality,
+Manager orchestration, and the final gate remain unimplemented. Neither the P3
+infrastructure smoke test nor the P9 single-process trace should be presented
+as that remaining P10 workflow.
 
 ## Frozen MVP boundary
 

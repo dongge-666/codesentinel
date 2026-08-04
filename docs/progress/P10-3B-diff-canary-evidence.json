@@ -1,0 +1,312 @@
+{
+    "schema_name":  "CodeSentinelP10DiffCanaryEvidence",
+    "schema_version":  "1.0.0",
+    "stage":  "P10-3B-2",
+    "status":  "PASS",
+    "started_at":  "2026-08-02T15:19:24.3417584+00:00",
+    "finished_at":  "2026-08-02T15:22:19.8157284+00:00",
+    "duration_seconds":  175.474,
+    "source":  {
+                   "revision":  "1d092bcc429f3fa25dd7ad7d62c6c7fc577a1cfe",
+                   "runtime_sha256":  "cafae83196efa7991c4144d1a64e4381cbe84552e37c99b0924299223427cfc6",
+                   "package_tree_sha256":  "2ee58e1d2846021ec0e1c42fc1c3e182ae6b0328411c759b1d07546017c8015b",
+                   "matrix_driver_sha256":  "86be5d047236f0c7715572df128b1d6f6287c701ad849aa0d965784bed455828",
+                   "matrix_recovery_driver_sha256":  "22eadf6d6a719b87b5028222c9970ff0379c6bcc24006b410f68d3e4dcbfb185"
+               },
+    "heartbeat":  {
+                      "original_sha256":  "133b595951f10d4d0f418bcfda39532b0bcab3b022578544397c2ca0ed69ecae",
+                      "restored_sha256":  "133b595951f10d4d0f418bcfda39532b0bcab3b022578544397c2ca0ed69ecae",
+                      "disable_log_observed":  true,
+                      "restore_log_observed":  true,
+                      "quiet_samples":  [
+                                            {
+                                                "elapsed_seconds":  0,
+                                                "observed_at":  "2026-08-02T15:19:31.1145126+00:00",
+                                                "manager_calls":  127
+                                            },
+                                            {
+                                                "elapsed_seconds":  55,
+                                                "observed_at":  "2026-08-02T15:20:26.6645028+00:00",
+                                                "manager_calls":  127
+                                            },
+                                            {
+                                                "elapsed_seconds":  110,
+                                                "observed_at":  "2026-08-02T15:21:22.2462798+00:00",
+                                                "manager_calls":  127
+                                            },
+                                            {
+                                                "elapsed_seconds":  130,
+                                                "observed_at":  "2026-08-02T15:21:42.8633922+00:00",
+                                                "manager_calls":  127
+                                            }
+                                        ]
+                  },
+    "policy_before":  {
+                          "name":  "codesentinel-manager-diff-deployer-v1",
+                          "semantic_sha256":  "02e7b1ccae93d69563f9a01b45bfd5929aa35fbcf3ac59b67ecec6abe695f148",
+                          "user_count":  1,
+                          "group_count":  0,
+                          "subject_fingerprint":  "37a8eec1ce19687d132fe29051dca629d164e2c4958ba141d5f4133a33f0688f"
+                      },
+    "policy_after":  {
+                         "name":  "codesentinel-manager-diff-deployer-v1",
+                         "semantic_sha256":  "02e7b1ccae93d69563f9a01b45bfd5929aa35fbcf3ac59b67ecec6abe695f148",
+                         "user_count":  1,
+                         "group_count":  0,
+                         "subject_fingerprint":  "37a8eec1ce19687d132fe29051dca629d164e2c4958ba141d5f4133a33f0688f"
+                     },
+    "shared_artifacts":  {
+                             "runtime/archive":  {
+                                                     "sha256":  "cafae83196efa7991c4144d1a64e4381cbe84552e37c99b0924299223427cfc6",
+                                                     "created":  false,
+                                                     "manager_verified":  true,
+                                                     "worker_verified":  true
+                                                 },
+                             "runtime/manifest":  {
+                                                      "sha256":  "ef6dbc44e031185e7b6dd518171a76b838261e803772bd51d88ce4545e0c6742",
+                                                      "created":  false,
+                                                      "manager_verified":  true,
+                                                      "worker_verified":  true
+                                                  },
+                             "review/input/sanitized-diff.json":  {
+                                                                      "sha256":  "10d5136d9e46872092757ca57bfb9cac26de1822516370601876fb1011164a71",
+                                                                      "created":  false,
+                                                                      "manager_verified":  true,
+                                                                      "worker_verified":  true
+                                                                  },
+                             "review/request.json":  {
+                                                         "sha256":  "d4eb761a73e4954c6c5cf8b29c961927fa043eab33d776f141d330f4fedff222",
+                                                         "created":  false,
+                                                         "manager_verified":  true,
+                                                         "worker_verified":  true
+                                                     },
+                             "task/base/assignment.json":  {
+                                                               "sha256":  "0ee04bc7bb718687911aeba6321e2f40b32410143bf76caedf8aa713bbc32721",
+                                                               "created":  false,
+                                                               "manager_verified":  true,
+                                                               "worker_verified":  true
+                                                           },
+                             "task/base/codesentinel-agentteams-runtime-0.1.0.manifest.json":  {
+                                                                                                   "sha256":  "ef6dbc44e031185e7b6dd518171a76b838261e803772bd51d88ce4545e0c6742",
+                                                                                                   "created":  false,
+                                                                                                   "manager_verified":  true,
+                                                                                                   "worker_verified":  true
+                                                                                               },
+                             "task/base/codesentinel-agentteams-runtime-0.1.0.pyz":  {
+                                                                                         "sha256":  "cafae83196efa7991c4144d1a64e4381cbe84552e37c99b0924299223427cfc6",
+                                                                                         "created":  false,
+                                                                                         "manager_verified":  true,
+                                                                                         "worker_verified":  true
+                                                                                     },
+                             "task/base/model-input.json":  {
+                                                                "sha256":  "577e263d8e27377dc116af2efdc2e3cbdd78b10b9e073f724dc73c61abb51b06",
+                                                                "created":  false,
+                                                                "manager_verified":  true,
+                                                                "worker_verified":  true
+                                                            },
+                             "task/base/review-request.json":  {
+                                                                   "sha256":  "d4eb761a73e4954c6c5cf8b29c961927fa043eab33d776f141d330f4fedff222",
+                                                                   "created":  false,
+                                                                   "manager_verified":  true,
+                                                                   "worker_verified":  true
+                                                               },
+                             "task/base/role-context.json":  {
+                                                                 "sha256":  "e637f453b709d7581d38adc9918222af21cb76631e3553099ae92f60f22ce5f7",
+                                                                 "created":  false,
+                                                                 "manager_verified":  true,
+                                                                 "worker_verified":  true
+                                                             },
+                             "task/base/sanitized-diff.json":  {
+                                                                   "sha256":  "10d5136d9e46872092757ca57bfb9cac26de1822516370601876fb1011164a71",
+                                                                   "created":  false,
+                                                                   "manager_verified":  true,
+                                                                   "worker_verified":  true
+                                                               },
+                             "task/meta.json":  {
+                                                    "status":  "in_progress",
+                                                    "assigned_to":  "cs-diff-analyzer",
+                                                    "room_present":  true,
+                                                    "sha256":  "51751756dbad94b12feb22315a1dc4c062d033fcae6d99a71e8dd1ef75f3e1ab",
+                                                    "recovered_existing":  true
+                                                },
+                             "task/spec.md":  {
+                                                  "sha256":  "be162a1d3d4cc12955b4d4e0cbd7fa8219e6884395aefc8a46459e9e8a44ffa8",
+                                                  "created":  false,
+                                                  "manager_verified":  true,
+                                                  "worker_verified":  true
+                                              },
+                             "task/workspace/role-payload.json":  {
+                                                                      "sha256":  "5fd649f0df14d26f199ad1935ef7a49a931e76be34e810704138e80dbf50ecd9",
+                                                                      "created":  false,
+                                                                      "manager_verified":  true,
+                                                                      "worker_verified":  true
+                                                                  }
+                         },
+    "deployment":  {
+                       "manager_remote":  {
+                                              "file_count":  9,
+                                              "tree_sha256":  "2ee58e1d2846021ec0e1c42fc1c3e182ae6b0328411c759b1d07546017c8015b",
+                                              "files":  {
+                                                            "SKILL.md":  "8c4275173b7b8fa7b888e7d3b9f9408e176160b0a815d6837c1045d974e1a5d4",
+                                                            "deployment-manifest.json":  "46384656275e199f23e601cd98f545bae7bfcb56b195ff7d3005f85debffe8cc",
+                                                            "deployment-manifest.template.json":  "dafb511c00030d0706c8a268bb3c3db0e91e1e562b97fa6d9974ae7b08911f08",
+                                                            "references/example-payload.json":  "6d408d185e67eeedd781c2670399ac465392cbd04f9af81d3407de7fb70d056f",
+                                                            "references/input-contract.md":  "ebf000108cb2c51be4f4c13f4819242875fbdbe7838b0cf1f30fdc45068c8086",
+                                                            "references/payload.schema.json":  "9d8b9dd39a9a94a4e4c84a8050d1e7fed58698bd6686b377bbb13d75d7fc82f5",
+                                                            "scripts/build-delivery.sh":  "97335ab4b3af2d227c5fcb5c81436a37e189ef5eef131f619396df1f9595fb44",
+                                                            "scripts/verify-runtime-binding.py":  "3383c1b8c589c9219aaca6d53e0dd0fd19d311b8d4a56f380a01c5ee3f96795a",
+                                                            "skill-manifest.json":  "ae0965b3dea95a3f84b5c2bc4804720d56ce9eece7903a7112478839b3ae07a4"
+                                                        }
+                                          },
+                       "worker_remote":  {
+                                             "file_count":  9,
+                                             "tree_sha256":  "2ee58e1d2846021ec0e1c42fc1c3e182ae6b0328411c759b1d07546017c8015b",
+                                             "files":  {
+                                                           "SKILL.md":  "8c4275173b7b8fa7b888e7d3b9f9408e176160b0a815d6837c1045d974e1a5d4",
+                                                           "deployment-manifest.json":  "46384656275e199f23e601cd98f545bae7bfcb56b195ff7d3005f85debffe8cc",
+                                                           "deployment-manifest.template.json":  "dafb511c00030d0706c8a268bb3c3db0e91e1e562b97fa6d9974ae7b08911f08",
+                                                           "references/example-payload.json":  "6d408d185e67eeedd781c2670399ac465392cbd04f9af81d3407de7fb70d056f",
+                                                           "references/input-contract.md":  "ebf000108cb2c51be4f4c13f4819242875fbdbe7838b0cf1f30fdc45068c8086",
+                                                           "references/payload.schema.json":  "9d8b9dd39a9a94a4e4c84a8050d1e7fed58698bd6686b377bbb13d75d7fc82f5",
+                                                           "scripts/build-delivery.sh":  "97335ab4b3af2d227c5fcb5c81436a37e189ef5eef131f619396df1f9595fb44",
+                                                           "scripts/verify-runtime-binding.py":  "3383c1b8c589c9219aaca6d53e0dd0fd19d311b8d4a56f380a01c5ee3f96795a",
+                                                           "skill-manifest.json":  "ae0965b3dea95a3f84b5c2bc4804720d56ce9eece7903a7112478839b3ae07a4"
+                                                       }
+                                         },
+                       "worker_local_verified":  true,
+                       "retained_on_success":  true
+                   },
+    "task":  {
+                 "task_id_fingerprint":  "896605139ff34d1a6e3d5137790de2b7918675bf7a2f0cfb97b357aec537eff2",
+                 "project_id_fingerprint":  "fe155594bf7c40a9fd053d4df956534017462380748cade212ad93998e97f515",
+                 "acknowledgement":  {
+                                         "ok":  true,
+                                         "status":  "in_progress",
+                                         "synced":  true,
+                                         "verified":  null,
+                                         "recovered_existing":  true
+                                     },
+                 "submission":  {
+                                    "ok":  true,
+                                    "status":  "submitted",
+                                    "synced":  true,
+                                    "verified":  true
+                                },
+                 "active_tasks_final":  0
+             },
+    "matrix":  {
+                   "candidate_sha256":  "b8c36e9f356a2ea6f771f0e3dd69954b43ea6ef5edbffd305ff4ce548967e5c4",
+                   "eligible_candidate_count":  1,
+                   "ignored_worker_progress_events":  4,
+                   "manager_mentioned_in_completion":  false,
+                   "origin_server_ts":  1785682675088,
+                   "recovered_existing":  true,
+                   "schema_name":  "CodeSentinelDiffMatrixRecoveryEvidence",
+                   "schema_version":  "1.0.0",
+                   "status":  "PASS",
+                   "worker_event_fingerprint":  "cc1e39ad81b4e0bee7bef09e75e7752fdb30f7d4ae635cd449baf97cef825703"
+               },
+    "delivery":  {
+                     "sha256":  "a0144cfc2dc41e962796d50f087d54081a107e96b6322d4182834c5957e92333",
+                     "validation":  {
+                                        "attempt":  1,
+                                        "model_calls":  0,
+                                        "ok":  true,
+                                        "operation":  "validate-assigned-delivery",
+                                        "output_sha256":  "5fd649f0df14d26f199ad1935ef7a49a931e76be34e810704138e80dbf50ecd9",
+                                        "review_id":  "review-p10-3b-diff-1d092bc",
+                                        "role":  "diff_analyzer",
+                                        "task_id":  "task-20260802-140501-diff-p10canary",
+                                        "trace_id":  "trace-p10-3b-diff-1d092bc"
+                                    },
+                     "reused_local":  true
+                 },
+    "budget":  {
+                   "domain_analyses":  1,
+                   "max_domain_analyses":  1,
+                   "diff_provider_call_delta":  2,
+                   "recovery_provider_call_delta":  0,
+                   "max_diff_provider_calls":  2,
+                   "manager_call_delta":  0
+               },
+    "usage":  {
+                  "entry":  {
+                                "manager":  127,
+                                "diff":  6,
+                                "security":  6,
+                                "quality":  3
+                            },
+                  "before_canary":  {
+                                        "manager":  127,
+                                        "diff":  6,
+                                        "security":  6,
+                                        "quality":  3
+                                    },
+                  "after_canary":  {
+                                       "manager":  127,
+                                       "diff":  6,
+                                       "security":  6,
+                                       "quality":  3
+                                   },
+                  "final":  {
+                                "manager":  127,
+                                "diff":  6,
+                                "security":  6,
+                                "quality":  3
+                            }
+              },
+    "routes":  {
+                   "before":  {
+                                  "manager":  "hiclaw-gateway/deepseek-v4-pro",
+                                  "diff":  "hiclaw-gateway/deepseek-v4-pro",
+                                  "security":  "hiclaw-gateway/deepseek-v4-pro",
+                                  "quality":  "hiclaw-gateway/deepseek-v4-pro"
+                              },
+                   "final":  {
+                                 "manager":  "hiclaw-gateway/deepseek-v4-pro",
+                                 "diff":  "hiclaw-gateway/deepseek-v4-pro",
+                                 "security":  "hiclaw-gateway/deepseek-v4-pro",
+                                 "quality":  "hiclaw-gateway/deepseek-v4-pro"
+                             }
+               },
+    "topology":  {
+                     "before":  [
+                                    "hiclaw-controller",
+                                    "hiclaw-manager",
+                                    "hiclaw-worker-cs-diff-analyzer",
+                                    "hiclaw-worker-cs-quality-reviewer",
+                                    "hiclaw-worker-cs-security-scanner"
+                                ],
+                     "final":  [
+                                   "hiclaw-controller",
+                                   "hiclaw-manager",
+                                   "hiclaw-worker-cs-diff-analyzer",
+                                   "hiclaw-worker-cs-quality-reviewer",
+                                   "hiclaw-worker-cs-security-scanner"
+                               ],
+                     "dify_running":  false
+                 },
+    "git":  {
+                "before":  {
+                               "head":  "1d092bcc429f3fa25dd7ad7d62c6c7fc577a1cfe",
+                               "origin_main":  "1d092bcc429f3fa25dd7ad7d62c6c7fc577a1cfe",
+                               "status_sha256":  "6b45711f604fa5f63f07410bdec0e60250361161f1935d3c755058f425adf3f0",
+                               "status_line_count":  2
+                           },
+                "final":  {
+                              "head":  "1d092bcc429f3fa25dd7ad7d62c6c7fc577a1cfe",
+                              "origin_main":  "1d092bcc429f3fa25dd7ad7d62c6c7fc577a1cfe",
+                              "status_sha256":  "6b45711f604fa5f63f07410bdec0e60250361161f1935d3c755058f425adf3f0",
+                              "status_line_count":  2
+                          }
+            },
+    "rollback":  {
+                     "attempted":  false,
+                     "completed":  false,
+                     "worker_backup_path":  null,
+                     "central_backup_path":  null
+                 },
+    "operation_error":  null,
+    "rollback_error":  null,
+    "heartbeat_restore_error":  null
+}

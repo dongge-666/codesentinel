@@ -4,7 +4,7 @@ Date: 2026-08-01
 
 Review result: **CONDITIONAL GO**
 
-Execution status: **P10-3A complete; P10-3B Gate A complete; Diff Canary attempt 1 blocked before task dispatch and requires R2 remediation**
+Execution status: **P10-3A, P10-3B Gate A, and the Diff Worker canary are complete; stopped before Security pending Gate C**
 
 This document reviews the P10-3 implementation and rollback plan. It is not
 evidence that any role Skill has been installed or that any model task has
@@ -245,12 +245,13 @@ Stop the current slice and report without proceeding to another Worker when:
 
 ## 11. Approval gates and recommended next action
 
-This plan review, P10-3A implementation, R1 correctness remediation, and their
-independent commits and pushes are complete. P10-3B deployment remains not
-approved.
+This plan review, P10-3A implementation, R1/R2 remediation, Gate A, and the
+Diff Worker canary are complete. P10-3B remains incomplete because Security,
+Quality, and evidence closure have not run.
 
 The post-R1 execution gates, exact clean-baseline rule, staged Worker canaries,
 acceptance criteria, and rollback matrix are frozen in
 [`P10-3B-controlled-deployment-plan.md`](P10-3B-controlled-deployment-plan.md).
-That plan must be independently reviewed, committed, and pushed before any
-P10-3B readiness or deployment action begins.
+The Diff completion evidence must be independently reviewed, committed, and
+pushed before a separate Gate C decision. Security deployment must not begin
+under the completed Diff-only approval.

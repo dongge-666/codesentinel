@@ -36,11 +36,11 @@ Frozen implementation contracts:
 Reviewed execution plans:
 
 - [P10-3 Worker Skills deployment and structured-delivery plan](design/P10-3-worker-skills-plan.md)
-  (`CONDITIONAL GO`; P10-3A and Gate A complete, Diff Canary blocked before dispatch)
+  (`CONDITIONAL GO`; P10-3A, Gate A, and Diff Canary complete; Security pending Gate C)
 - [P10-3B controlled Worker deployment and rollback plan](design/P10-3B-controlled-deployment-plan.md)
-  (`CONDITIONAL GO`; Gate B retry requires R2 remediation and new approval)
+  (`CONDITIONAL GO`; Gate B Diff PASS, stopped before Security)
 - [R2 AgentTeams infrastructure remediation plan](design/R2-agentteams-infrastructure-remediation-plan.md)
-  (`COMPLETE`; R2-6 passed, fresh Gate B refresh is next)
+  (`COMPLETE`; R2-6 enabled the accepted Gate B Diff canary)
 
 P10 subphase records:
 
@@ -50,3 +50,6 @@ P10 subphase records:
 - [P10-3B Gate A readiness evidence](progress/P10-3B-gate-a-readiness.md)
 - [P10-3B Diff Worker canary attempt 1](progress/P10-3B-diff-canary-attempt-1.md)
   (`BLOCKED` before task dispatch; fail-closed rollback completed)
+- [P10-3B Diff Worker canary completion](progress/P10-3B-diff-canary-pass.md)
+  (`PASS` for Diff only; stopped before Security)
+- [P10-3B Diff Worker machine-readable evidence](progress/P10-3B-diff-canary-evidence.json)

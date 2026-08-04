@@ -4,7 +4,7 @@ Date: 2026-08-02
 
 Plan review result: **CONDITIONAL GO**
 
-Execution status: **Gate A complete; Gate B attempt 1 blocked before task dispatch; a live retry is not approved by this document**
+Execution status: **Gate A and the Gate B Diff Worker canary are complete; stopped before Security pending Gate C**
 
 This plan replaces the stale P10-3B next-action text in the broader P10-3 plan.
 It authorizes documentation and readiness review only. It is not evidence that
@@ -14,9 +14,9 @@ a Skill was deployed, a task was registered, or a model was called.
 
 - P10-3A implementation commit: `4ffc1c82a7f870029594fc2f2bc4705c6f1ac9b5`.
 - R1 security-correctness commit: `33a5985cd6761bf7bd95e0639a92cab3dc7f766a`.
-- The deployment baseline is the future accepted clean documentation commit
-  that contains this plan and has R1 as an ancestor. Its exact SHA is `TBD`
-  until that commit is separately approved, created, and pushed.
+- The accepted Gate B refresh baseline is
+  `1d092bcc429f3fa25dd7ad7d62c6c7fc577a1cfe`; it contains R1, R2, and this
+  reviewed plan as ancestors.
 - At build time, local `HEAD`, `origin/main`, the recorded source revision, and
   the bundle manifest must agree, and `source_dirty` must be `false`.
 - The three Workers remain on `hiclaw-gateway/deepseek-v4-pro`.
@@ -25,8 +25,10 @@ a Skill was deployed, a task was registered, or a model was called.
   must not exceed eight.
 - P9 remains the fallback and Dify must remain stopped.
 
-The plan file itself makes the working tree dirty. Therefore no deployment may
-start until this plan is committed and pushed with separate approval.
+Gate B started only after the accepted baseline was committed and pushed.
+The new evidence files now make the working tree dirty and must not become a
+Security build input until they are separately reviewed, committed, and
+pushed.
 
 ## 2. Exact scope
 
@@ -126,11 +128,11 @@ Security or Gate role.
 
 ## 4. Mandatory checkpoints
 
-The current approval covers only plan creation and review. Later execution
-requires explicit approval after the plan commit is pushed.
+Gate A and Gate B were separately approved and are complete. Later execution
+still requires an explicit approval after the new evidence is reviewed.
 
 - Gate A: approve P10-3B-0 and P10-3B-1.
-- Gate B: after their evidence passes, approve the Diff canary.
+- Gate B: complete; the Diff canary passed on the accepted refresh baseline.
 - Gate C: after Diff passes, approve the Security Worker.
 - Gate D: after Security passes, approve the Quality Worker and evidence
   closure.
@@ -193,11 +195,11 @@ Stop immediately when any of the following occurs:
 
 ## 8. Plan audit result and next action
 
-The plan is **GO for a plan-only commit** and **NO-GO for live deployment**.
-It preserves the competition-relevant claims of role isolation, official
-finite-task use, deterministic evidence, reproducibility, observability, and
-fail-closed behavior while preventing P10-4 claims from leaking into P10-3B.
+Gate B is **PASS for the Diff Worker only**. The accepted evidence proves role
+isolation, official finite-task acknowledgement/submission, deterministic
+delivery validation, exact model-budget accounting, and fail-closed recovery.
 
-Before execution, the user should review this file, approve a documentation-only
-commit and push, then separately approve Gate A. No deployment, model call, or
-AgentTeams mutation may occur before that sequence is complete.
+P10-3B remains incomplete. The next action is to review the Diff evidence,
+commit and push it with separate approval, and then make a separate Gate C
+decision. Security and Quality deployment remain **NO-GO** under the current
+Diff-only approval, and no P10-4 claim is authorized.
